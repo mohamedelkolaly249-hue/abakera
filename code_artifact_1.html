@@ -1,0 +1,3946 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>مسابقة العباقرة | كلية الصيدلة - جامعة المنصورة الأهلية</title>
+<script src="https://cdn.tailwindcss.com/3.4.17"></script>
+<script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/tone@14.8.49/build/Tone.js"></script>
+<script>
+  // تحميل المكتبات الثقيلة للهوست فقط؛ الموبايل (?room=) يفتح فوراً بدون تحميل 1MB+ زائدة
+  if (!window.location.search.includes('room=')) {
+    [
+      'https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js',
+      'https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js',
+      'https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.3/dist/confetti.browser.min.js',
+      'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js'
+    ].forEach(function(src) {
+      var s = document.createElement('script');
+      s.src = src;
+      s.defer = true;
+      document.head.appendChild(s);
+    });
+  }
+</script>
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@600;700;800;900&family=Tajawal:wght@700;800;900&family=Montserrat:wght@600;700;800;900&display=swap" rel="stylesheet">
+<style>
+  * {
+    font-family: 'Cairo', 'Tajawal', sans-serif;
+    user-select: none;
+    box-sizing: border-box;
+    -webkit-tap-highlight-color: transparent;
+  }
+  input { user-select: text !important; }
+  button { touch-action: manipulation; }
+  .en-font { font-family: 'Montserrat', 'Cairo', sans-serif; direction: ltr; }
+
+  html, body {
+    margin: 0;
+    padding: 0;
+    width: 100%;
+    min-height: 100%;
+    height: 100%;
+    overflow: hidden;
+    background-color: #02050e !important;
+    color: #f8fafc;
+    perspective: 1500px;
+  }
+  #canvas-container {
+    position: fixed;
+    inset: 0;
+    z-index: 0;
+    pointer-events: none;
+    background: radial-gradient(circle at 50% 25%, rgba(30, 58, 138, 0.35) 0%, rgba(2, 5, 14, 0.98) 72%);
+  }
+  .ui-layer {
+    position: relative;
+    z-index: 10;
+    height: 100dvh;
+    width: 100vw;
+    display: flex;
+    flex-direction: column;
+    overflow-y: auto;
+    overflow-x: hidden;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  /* شريط تمرير ملكي ناعم */
+  .ui-layer::-webkit-scrollbar { width: 6px; }
+  .ui-layer::-webkit-scrollbar-track { background: rgba(2, 5, 14, 0.4); }
+  .ui-layer::-webkit-scrollbar-thumb { background: rgba(245, 158, 11, 0.45); border-radius: 99px; }
+
+  @keyframes goldShine {
+    0% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
+  }
+  .gold-shimmer-text {
+    background: linear-gradient(90deg, #fde047 0%, #f59e0b 25%, #fef9c3 50%, #d97706 75%, #fde047 100%);
+    background-size: 200% auto;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    animation: goldShine 4s linear infinite;
+    filter: drop-shadow(0 3px 10px rgba(245, 158, 11, 0.3));
+  }
+  .gold-shimmer-bar {
+    background: linear-gradient(90deg, #fde047 0%, #f59e0b 50%, #fde047 100%);
+    background-size: 200% auto;
+    animation: goldShine 3s linear infinite;
+  }
+
+  .dark-gold-btn {
+    background: linear-gradient(160deg, #0d1832 0%, #050a18 100%);
+    border: 1.5px solid rgba(245, 158, 11, 0.65);
+    box-shadow:
+      0 6px 0 #02050d,
+      0 12px 28px rgba(0, 0, 0, 0.85),
+      0 0 20px rgba(245, 158, 11, 0.15),
+      inset 0 1px 1px rgba(254, 240, 138, 0.25);
+    transition: all 0.15s cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
+  .dark-gold-btn:hover:not(:disabled) {
+    transform: translateY(-2px);
+    border-color: #fde047;
+    background: linear-gradient(160deg, #132347 0%, #070e22 100%);
+    box-shadow:
+      0 8px 0 #02050d,
+      0 16px 35px rgba(0, 0, 0, 0.9),
+      0 0 28px rgba(245, 158, 11, 0.3),
+      inset 0 1px 2px rgba(254, 240, 138, 0.4);
+  }
+  .dark-gold-btn:active:not(:disabled) {
+    transform: translateY(4px);
+    box-shadow: 0 2px 0 #02050d, 0 5px 12px rgba(0, 0, 0, 0.8);
+  }
+  .dark-gold-btn:disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
+  }
+
+  .gold-divider-3d {
+    display: inline-block;
+    width: 2px;
+    height: 18px;
+    border-radius: 99px;
+    background: linear-gradient(180deg, #fef08a 0%, #f59e0b 50%, #92400e 100%);
+    box-shadow: 0 0 10px rgba(250, 204, 21, 0.75);
+    margin: 0 12px;
+    vertical-align: middle;
+  }
+
+  .royal-dark-card {
+    background: linear-gradient(165deg, rgba(10, 19, 42, 0.92) 0%, rgba(3, 7, 18, 0.98) 100%);
+    border: 1px solid rgba(245, 158, 11, 0.32);
+    backdrop-filter: blur(10px);
+    box-shadow:
+      0 24px 60px -10px rgba(0, 0, 0, 0.92),
+      0 4px 0 rgba(15, 23, 42, 0.9),
+      inset 0 1px 1px rgba(254, 240, 138, 0.16);
+    transform-style: preserve-3d;
+    transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+  .royal-crown-card {
+    background: linear-gradient(165deg, rgba(11, 21, 46, 0.95) 0%, rgba(3, 6, 16, 0.99) 100%);
+    border: 1.5px solid rgba(245, 158, 11, 0.55);
+    backdrop-filter: blur(12px);
+    box-shadow:
+      0 30px 75px rgba(0, 0, 0, 0.95),
+      0 5px 0 rgba(120, 53, 15, 0.45),
+      0 0 40px rgba(245, 158, 11, 0.14),
+      inset 0 1px 1px rgba(254, 240, 138, 0.22);
+  }
+
+  .logo-3d-ring {
+    width: 76px; height: 76px; border-radius: 9999px; padding: 2px;
+    background: linear-gradient(135deg, #fef08a 0%, #f59e0b 50%, #92400e 100%);
+    box-shadow: 0 10px 24px rgba(0, 0, 0, 0.85), 0 0 18px rgba(245, 158, 11, 0.3);
+    display: inline-flex; align-items: center; justify-content: center; transition: transform 0.3s ease;
+  }
+  .logo-3d-ring:hover { transform: translateY(-3px) scale(1.04); }
+  .logo-3d-ring img { width: 100%; height: 100%; border-radius: 9999px; object-fit: cover; background: #050b1a; clip-path: circle(46.5% at 50% 50%); transform: scale(1.08); }
+
+  .logo-3d-ring-sm {
+    width: 44px; height: 44px; border-radius: 9999px; padding: 1.5px;
+    background: linear-gradient(135deg, #fef08a 0%, #f59e0b 50%, #92400e 100%);
+    box-shadow: 0 6px 14px rgba(0, 0, 0, 0.8), 0 0 12px rgba(245, 158, 11, 0.25);
+    display: inline-flex; align-items: center; justify-content: center;
+  }
+  .logo-3d-ring-sm img { width: 100%; height: 100%; border-radius: 9999px; object-fit: cover; background: #050b1a; clip-path: circle(46.5% at 50% 50%); transform: scale(1.08); }
+
+  .team-orb-3d {
+    position: relative; width: 64px; height: 64px; display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+  }
+  .team-orb-ring {
+    position: absolute; inset: -5px; border-radius: 9999px; border: 1.5px dashed rgba(253, 224, 71, 0.7); animation: spinSlow 10s linear infinite; pointer-events: none;
+  }
+  .team-orb-ring-reverse {
+    position: absolute; inset: -1px; border-radius: 9999px; border: 1px solid rgba(245, 158, 11, 0.35); border-top-color: #fde047; animation: spinReverse 6s linear infinite; pointer-events: none;
+  }
+  .team-orb-chassis {
+    position: relative; width: 54px; height: 54px; border-radius: 9999px; padding: 2px;
+    background: linear-gradient(135deg, #fef08a 0%, #f59e0b 50%, #78350f 100%);
+    box-shadow: 0 10px 22px rgba(0, 0, 0, 0.9), 0 4px 0 #3b1704, inset 0 2px 3px rgba(255, 255, 255, 0.7);
+    display: flex; align-items: center; justify-content: center;
+  }
+  .team-orb-core-rose {
+    width: 100%; height: 100%; border-radius: 9999px; background: radial-gradient(circle at 32% 28%, #fb7185 0%, #e11d48 45%, #4c0519 95%);
+    box-shadow: inset 0 -5px 10px rgba(0, 0, 0, 0.65), 0 0 22px rgba(244, 63, 94, 0.45);
+    display: flex; align-items: center; justify-content: center;
+  }
+  .team-orb-core-blue {
+    width: 100%; height: 100%; border-radius: 9999px; background: radial-gradient(circle at 32% 28%, #60a5fa 0%, #2563eb 45%, #172554 95%);
+    box-shadow: inset 0 -5px 10px rgba(0, 0, 0, 0.65), 0 0 22px rgba(59, 130, 246, 0.45);
+    display: flex; align-items: center; justify-content: center;
+  }
+
+  .finale-3d-rig {
+    position: relative; width: 148px; height: 148px; margin: 0 auto 14px auto; display: flex; align-items: center; justify-content: center;
+  }
+  .finale-orbit-outer {
+    position: absolute; inset: -12px; border-radius: 9999px; border: 2.5px dashed rgba(253, 224, 71, 0.8); animation: spinSlow 11s linear infinite; filter: drop-shadow(0 0 12px rgba(245, 158, 11, 0.55)); pointer-events: none;
+  }
+  .finale-orbit-inner {
+    position: absolute; inset: -3px; border-radius: 9999px; border: 2px solid rgba(56, 189, 248, 0.35); border-top-color: #fde047; border-bottom-color: #f59e0b; animation: spinReverse 7s linear infinite; pointer-events: none;
+  }
+  .finale-glow-aura {
+    position: absolute; inset: 6px; border-radius: 9999px; background: radial-gradient(circle, rgba(245, 158, 11, 0.65), rgba(56, 189, 248, 0.25)); filter: blur(22px); pointer-events: none;
+  }
+  .finale-dome-chassis {
+    position: relative; width: 126px; height: 126px; border-radius: 9999px; background: linear-gradient(145deg, #1e293b, #060b16); padding: 10px; border: 2px solid rgba(253, 224, 71, 0.75);
+    box-shadow: 0 20px 45px rgba(0, 0, 0, 0.95), 0 6px 0 #02050b, inset 0 2px 5px rgba(254, 240, 138, 0.4);
+    display: flex; align-items: center; justify-content: center;
+  }
+  .finale-dome-core {
+    width: 100%; height: 100%; border-radius: 9999px; background: radial-gradient(circle at 50% 28%, #1e3a8a 0%, #09132c 65%, #02050e 100%);
+    box-shadow: inset 0 -6px 14px rgba(0, 0, 0, 0.8); display: flex; align-items: center; justify-content: center; overflow: hidden;
+  }
+
+  .opt-royal-btn {
+    background: linear-gradient(180deg, rgba(15, 27, 56, 0.94) 0%, rgba(6, 11, 26, 0.98) 100%);
+    border: 1px solid rgba(245, 158, 11, 0.35);
+    box-shadow: 0 6px 0 #030712, 0 12px 24px rgba(0, 0, 0, 0.8), inset 0 1px 1px rgba(254, 240, 138, 0.14);
+    transition: all 0.16s cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
+  .opt-royal-btn:hover:not(:disabled) {
+    transform: translateY(-3px); border-color: rgba(253, 224, 71, 0.8); background: linear-gradient(180deg, rgba(22, 39, 78, 0.96) 0%, rgba(9, 17, 38, 0.99) 100%);
+    box-shadow: 0 9px 0 #451a03, 0 18px 32px rgba(245, 158, 11, 0.22);
+  }
+  .opt-royal-btn:active:not(:disabled) { transform: translateY(3px); box-shadow: 0 2px 0 #030712, 0 5px 10px rgba(0, 0, 0, 0.7); }
+
+  .btn-3d {
+    transition: all 0.14s cubic-bezier(0.34, 1.56, 0.64, 1);
+    box-shadow: 0 5px 0 rgba(0, 0, 0, 0.65), 0 8px 18px rgba(0, 0, 0, 0.45), inset 0 1px 1px rgba(255, 255, 255, 0.2);
+  }
+  .btn-3d:hover:not(:disabled) { transform: translateY(-2px); filter: brightness(1.08); }
+  .btn-3d:active:not(:disabled) { transform: translateY(3px); box-shadow: 0 2px 0 rgba(0, 0, 0, 0.65), 0 4px 8px rgba(0, 0, 0, 0.4); }
+
+  .qr-white-card {
+    background: #ffffff; padding: 14px; border-radius: 22px; border: 2px solid rgba(245, 158, 11, 0.7);
+    box-shadow: 0 18px 45px rgba(0, 0, 0, 0.85), 0 0 25px rgba(245, 158, 11, 0.22); display: inline-block;
+  }
+  .glass-3d-backdrop {
+    background: radial-gradient(circle at 50% 50%, rgba(6, 13, 30, 0.55) 0%, rgba(2, 5, 14, 0.82) 100%) !important;
+    backdrop-filter: blur(8px);
+  }
+
+  @keyframes timerUrgentPulse {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.1); }
+  }
+  .timer-urgent {
+    border-color: #f43f5e !important;
+    color: #fda4af !important;
+    box-shadow: 0 0 28px rgba(244, 63, 94, 0.6) !important;
+    animation: timerUrgentPulse 0.5s ease-in-out infinite;
+  }
+
+  .buzzer-rig { position: relative; width: 256px; height: 256px; display: flex; align-items: center; justify-content: center; }
+  .buzzer-orbit-ring {
+    position: absolute; inset: -12px; border-radius: 9999px; border: 2px dashed rgba(253, 224, 71, 0.75); animation: spinSlow 12s linear infinite; pointer-events: none;
+  }
+  .buzzer-glow-aura { position: absolute; inset: 6px; border-radius: 9999px; filter: blur(26px); opacity: 0.65; transition: all 0.3s ease; pointer-events: none; }
+  .buzzer-chassis {
+    position: relative; width: 232px; height: 232px; border-radius: 9999px; background: linear-gradient(145deg, #1e293b, #070c18); padding: 16px;
+    box-shadow: 0 26px 50px rgba(0, 0, 0, 0.95), 0 8px 0 #02050b, inset 0 2px 4px rgba(254, 240, 138, 0.3), inset 0 -8px 16px rgba(0, 0, 0, 0.9);
+    border: 1.5px solid rgba(245, 158, 11, 0.65); display: flex; align-items: center; justify-content: center;
+  }
+  .buzzer-dome {
+    position: relative; width: 100%; height: 100%; border-radius: 9999px; border: none; outline: none; cursor: pointer;
+    display: flex; flex-direction: column; align-items: center; justify-content: center; transform: translateY(-10px);
+    transition: all 0.1s cubic-bezier(0.34, 1.56, 0.64, 1); overflow: hidden;
+  }
+  .buzzer-dome::before {
+    content: ''; position: absolute; top: 5%; left: 14%; right: 14%; height: 38%; border-radius: 9999px;
+    background: linear-gradient(180deg, rgba(255,255,255,0.6) 0%, rgba(255,255,255,0.02) 100%); pointer-events: none;
+  }
+  .buzzer-dome-team1 {
+    background: radial-gradient(circle at 50% 28%, #ff4d79 0%, #e11d48 55%, #881337 100%);
+    box-shadow: 0 15px 0 #4c0519, 0 22px 35px rgba(0, 0, 0, 0.9), 0 0 38px rgba(244, 63, 94, 0.5), inset 0 -8px 18px rgba(0, 0, 0, 0.5);
+  }
+  .buzzer-dome-team2 {
+    background: radial-gradient(circle at 50% 28%, #60a5fa 0%, #2563eb 55%, #1e3a8a 100%);
+    box-shadow: 0 15px 0 #172554, 0 22px 35px rgba(0, 0, 0, 0.9), 0 0 38px rgba(59, 130, 246, 0.5), inset 0 -8px 18px rgba(0, 0, 0, 0.5);
+  }
+  .buzzer-dome:active:not(:disabled) {
+    transform: translateY(2px); box-shadow: 0 2px 0 #1e293b, 0 6px 15px rgba(0, 0, 0, 0.85), 0 0 60px rgba(250, 204, 21, 0.9), inset 0 8px 22px rgba(0, 0, 0, 0.65);
+  }
+  .buzzer-dome:disabled {
+    background: radial-gradient(circle at 50% 30%, #334155 0%, #1e293b 70%, #090d16 100%);
+    box-shadow: 0 7px 0 #04070e, 0 12px 20px rgba(0, 0, 0, 0.7), inset 0 -4px 10px rgba(0, 0, 0, 0.6);
+    transform: translateY(-3px); cursor: not-allowed; opacity: 0.48;
+  }
+
+  @keyframes spinSlow { 100% { transform: rotate(360deg); } }
+  @keyframes spinReverse { 100% { transform: rotate(-360deg); } }
+  @keyframes pulseRing {
+    0% { box-shadow: 0 0 0 0 rgba(245, 158, 11, 0.65); }
+    70% { box-shadow: 0 0 0 22px rgba(245, 158, 11, 0); }
+    100% { box-shadow: 0 0 0 0 rgba(245, 158, 11, 0); }
+  }
+  .winner-glow { animation: pulseRing 1.6s infinite; }
+  @keyframes floatCap {
+    0%, 100% { transform: translateY(0px) rotate(-2deg); }
+    50% { transform: translateY(-6px) rotate(2deg); }
+  }
+  .grad-cap-anim { animation: floatCap 2.6s ease-in-out infinite; display: inline-block; }
+  @keyframes slideUp {
+    from { opacity: 0; transform: translateY(18px) scale(0.98); }
+    to { opacity: 1; transform: translateY(0) scale(1); }
+  }
+  .animate-slide-up { animation: slideUp 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+  @media (max-width: 767px) {
+    .royal-dark-card, .royal-crown-card, .glass-3d-backdrop {
+      backdrop-filter: none !important;
+      -webkit-backdrop-filter: none !important;
+    }
+  }
+  @keyframes countdownPop {
+    0% { opacity: 0; transform: scale(0.4); }
+    40% { opacity: 1; transform: scale(1.15); }
+    100% { opacity: 1; transform: scale(1); }
+  }
+  .countdown-pop { animation: countdownPop 0.55s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+  @keyframes firePulse {
+    0%, 100% { transform: scale(1); box-shadow: 0 0 12px rgba(249, 115, 22, 0.5); }
+    50% { transform: scale(1.06); box-shadow: 0 0 22px rgba(251, 146, 60, 0.9); }
+  }
+  .streak-badge { animation: firePulse 1.2s ease-in-out infinite; }
+
+  #toast-container {
+    position: fixed;
+    top: 18px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 100;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    pointer-events: none;
+    width: min(92vw, 460px);
+  }
+  .toast-item {
+    pointer-events: auto;
+    padding: 12px 18px;
+    border-radius: 16px;
+    font-weight: 800;
+    font-size: 0.95rem;
+    text-align: center;
+    backdrop-filter: blur(16px);
+    box-shadow: 0 12px 30px rgba(0, 0, 0, 0.85);
+    animation: slideUp 0.25s ease forwards;
+  }
+</style>
+</head>
+<body>
+
+<div id="canvas-container"></div>
+<div id="toast-container"></div>
+
+<svg width="0" height="0" class="absolute">
+  <defs>
+    <linearGradient id="gold3d" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#fef9c3" />
+      <stop offset="35%" stop-color="#fde047" />
+      <stop offset="70%" stop-color="#d97706" />
+      <stop offset="100%" stop-color="#fef08a" />
+    </linearGradient>
+  </defs>
+</svg>
+
+<!-- ================= 1. شاشة البداية ================= -->
+<div id="lobby-screen" class="ui-layer items-center justify-center p-4">
+  <div class="royal-dark-card royal-crown-card max-w-3xl w-full rounded-3xl p-6 sm:p-10 text-center my-auto animate-slide-up">
+
+    <div class="flex items-center justify-center gap-5 sm:gap-8 mb-5">
+      <div class="logo-3d-ring">
+        <img src="mnu-logo.jpg" alt="جامعة المنصورة الأهلية" onerror="this.parentElement.style.display='none'">
+      </div>
+      <div class="logo-3d-ring">
+        <img src="pharmacy-logo.jpg" alt="كلية الصيدلة" onerror="this.parentElement.style.display='none'">
+      </div>
+      <div class="logo-3d-ring">
+        <img src="pharma-dept-logo.jpg" alt="قسم الأدوية والسموم" onerror="this.parentElement.style.display='none'">
+      </div>
+    </div>
+
+    <div class="text-sm sm:text-base font-extrabold text-amber-300/95 tracking-wide mb-2">
+      جامعة المنصورة الأهلية • كلية الصيدلة • قسم الأدوية والسموم
+    </div>
+
+    <h1 class="text-4xl sm:text-7xl font-black tracking-tight gold-shimmer-text mb-5">
+      مسابقة العباقرة
+    </h1>
+
+    <div class="bg-slate-950/90 border border-amber-400/35 rounded-2xl py-3.5 px-6 mb-7 inline-block max-w-full shadow-[0_10px_30px_rgba(0,0,0,0.8)]">
+      <div class="text-xs font-extrabold gold-shimmer-text tracking-wider mb-1.5">تحت إشراف</div>
+      <div class="text-sm sm:text-base font-black text-white flex flex-wrap items-center justify-center gap-y-1">
+        <span>أ.د/ مريهان مقلد</span>
+        <span class="gold-divider-3d"></span>
+        <span>أ.م.د/ مروة زغلول</span>
+        <span class="gold-divider-3d"></span>
+        <span>م.م/ هبة بهريز</span>
+      </div>
+    </div>
+
+    <div id="host-role-card" class="max-w-md mx-auto flex flex-col gap-3">
+      <button id="create-host-btn" onclick="createHostRoom()" class="dark-gold-btn en-font w-full py-4 rounded-2xl font-black text-xl sm:text-2xl tracking-wider cursor-pointer flex items-center justify-center gap-3">
+        <svg class="w-7 h-7" fill="url(#gold3d)" viewBox="0 0 24 24"><path d="M21 3H3c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h5v2h8v-2h5c1.1 0 1.99-.9 1.99-2L23 5c0-1.1-.9-2-2-2zm0 14H3V5h18v12z"/></svg>
+        <span class="gold-shimmer-text">Host (موبايلات + QR)</span>
+      </button>
+
+      <button id="start-local-btn" onclick="startLocalStudioMode()" class="btn-3d w-full py-3.5 px-5 rounded-2xl bg-slate-900/90 hover:bg-slate-800 border border-sky-400/45 text-sky-200 font-black text-sm sm:text-base cursor-pointer flex items-center justify-center gap-2.5">
+        <svg class="w-5 h-5 fill-sky-300" viewBox="0 0 24 24"><path d="M4 6h16v10H4V6zm-2 12h20v2H2v-2z"/></svg>
+        <span>تشغيل وضع القاعة المحلي (بدون موبايلات / احتياطي)</span>
+      </button>
+
+      <div class="flex items-center gap-2 mt-1">
+        <label for="question-bank-file" class="btn-3d flex-1 py-2.5 px-4 rounded-2xl bg-slate-950/90 hover:bg-slate-900 border border-amber-400/35 text-amber-200 font-black text-xs sm:text-sm cursor-pointer flex items-center justify-center gap-2">
+          <span>📂 استيراد بنك أسئلة (PDF / JSON / CSV)</span>
+        </label>
+        <input id="question-bank-file" type="file" accept=".pdf,.json,.csv,.txt" onchange="handleBankFileImport(event)" class="hidden">
+        <button id="reset-bank-btn" onclick="resetDefaultQuestionBank()" class="hidden btn-3d py-2.5 px-3 rounded-2xl bg-slate-900 hover:bg-slate-800 border border-slate-700 text-slate-300 font-black text-xs cursor-pointer" title="العودة لبنك الأسئلة الافتراضي">
+          الافتراضي
+        </button>
+      </div>
+      <div id="bank-status-pill" class="text-[11px] font-bold text-slate-400">
+        بنك الأسئلة الحالي: الافتراضي (35 سؤال صيدلة)
+      </div>
+
+      <div id="resume-match-box" class="hidden flex items-center gap-2 mt-1">
+        <button id="resume-match-btn" onclick="resumeSavedMatch()" class="btn-3d flex-1 py-3 px-4 rounded-2xl bg-emerald-950/90 hover:bg-emerald-900 border border-emerald-400/50 text-emerald-200 font-black text-xs sm:text-sm cursor-pointer">
+          استئناف المباراة المحفوظة
+        </button>
+        <button onclick="clearSavedMatch()" class="btn-3d py-3 px-3.5 rounded-2xl bg-slate-900 hover:bg-rose-950 border border-slate-700 text-slate-400 hover:text-rose-300 font-black text-xs cursor-pointer" title="مسح الحفظ">
+          ✕
+        </button>
+      </div>
+    </div>
+
+    <div id="team-role-card" class="hidden max-w-md mx-auto mt-2">
+      <!-- الخطوة 1: اسم الفريق -->
+      <div id="team-step-1">
+        <div class="mb-4">
+          <label class="block text-sm font-extrabold gold-shimmer-text mb-2">اسم الفريق</label>
+          <input id="custom-team-name-input" type="text" maxlength="24" placeholder="اكتب اسم فريقك هنا..." onkeydown="if(event.key==='Enter'){event.preventDefault();goToTeamMembersStep();}" class="w-full text-center text-xl font-black bg-slate-950/95 border border-amber-400/50 rounded-2xl py-4 px-4 text-white focus:outline-none focus:border-amber-300 shadow-inner">
+        </div>
+        <button onclick="goToTeamMembersStep()" class="dark-gold-btn w-full py-4 rounded-2xl font-black text-lg cursor-pointer flex items-center justify-center gap-2.5">
+          <span class="gold-shimmer-text">التالي: أسماء أعضاء التيم ◀</span>
+        </button>
+      </div>
+
+      <!-- الخطوة 2: قائمة أسماء أعضاء التيم (تقبل أي عدد) ثم دخول -->
+      <div id="team-step-2" class="hidden animate-slide-up">
+        <div class="flex items-center justify-between bg-slate-950/80 border border-amber-400/35 rounded-2xl px-4 py-2.5 mb-3">
+          <div class="text-right">
+            <div class="text-[10px] text-amber-300 font-bold">الفريق</div>
+            <div id="preview-team-name" class="text-base font-black text-white">—</div>
+          </div>
+          <button onclick="backToTeamNameStep()" class="px-3 py-1 rounded-xl bg-slate-900 border border-slate-700 text-slate-300 text-xs font-bold cursor-pointer">
+            تعديل الاسم
+          </button>
+        </div>
+
+        <label class="block text-sm font-extrabold gold-shimmer-text mb-2">أسماء باقي أعضاء التيم (أضف أي عدد)</label>
+        <div class="flex gap-2 mb-3">
+          <input id="member-name-input" type="text" maxlength="28" placeholder="اكتب اسم العضو..." onkeydown="if(event.key==='Enter'){event.preventDefault();addTeamMember();}" class="flex-1 text-right text-base font-bold bg-slate-950/95 border border-amber-400/45 rounded-2xl py-3 px-4 text-white focus:outline-none focus:border-amber-300">
+          <button onclick="addTeamMember()" class="btn-3d px-4 py-3 rounded-2xl bg-amber-500/20 hover:bg-amber-500/35 border border-amber-400/60 text-amber-200 font-black text-sm cursor-pointer shrink-0">
+            + إضافة
+          </button>
+        </div>
+
+        <div id="members-chips-list" class="flex flex-wrap gap-2 justify-center min-h-[36px] max-h-36 overflow-y-auto mb-4 p-2 rounded-2xl bg-slate-950/60 border border-slate-800/80">
+          <span class="text-xs text-slate-500 font-bold my-auto">يمكنك إضافة أي عدد من الأسماء أو الدخول مباشرة</span>
+        </div>
+
+        <button id="join-auto-team-btn" onclick="joinCompetitionAuto()" class="dark-gold-btn w-full py-4 rounded-2xl font-black text-lg cursor-pointer flex items-center justify-center gap-2.5">
+          <svg class="w-6 h-6" fill="url(#gold3d)" viewBox="0 0 24 24"><path d="M12 2L4 5v6.09c0 5.05 3.41 9.76 8 10.91 4.59-1.15 8-5.86 8-10.91V5l-8-3z"/></svg>
+          <span class="gold-shimmer-text">دخول المسابقة</span>
+        </button>
+      </div>
+    </div>
+
+    <div id="connection-status" class="mt-4 text-xs text-emerald-400 font-bold min-h-[18px]"></div>
+  </div>
+</div>
+
+<!-- ================= 2. صفحة انتظار الفريقين ================= -->
+<div id="host-waiting-screen" class="ui-layer hidden items-center justify-center p-4">
+  <div class="royal-dark-card royal-crown-card max-w-5xl w-full rounded-3xl p-6 sm:p-9 text-center my-auto animate-slide-up">
+
+    <div class="flex items-center justify-center gap-4 sm:gap-6 mb-4">
+      <div class="logo-3d-ring-sm"><img src="mnu-logo.jpg" alt="" onerror="this.parentElement.style.display='none'"></div>
+      <div class="text-center px-2">
+        <div class="text-xs sm:text-sm font-extrabold text-amber-300/90">كلية الصيدلة • قسم الأدوية والسموم</div>
+        <div class="text-2xl sm:text-3xl font-black gold-shimmer-text">مسابقة العباقرة</div>
+      </div>
+      <div class="logo-3d-ring-sm"><img src="pharmacy-logo.jpg" alt="" onerror="this.parentElement.style.display='none'"></div>
+      <div class="logo-3d-ring-sm"><img src="pharma-dept-logo.jpg" alt="" onerror="this.parentElement.style.display='none'"></div>
+    </div>
+
+    <div class="my-3 py-3.5 px-8 rounded-2xl bg-slate-950/90 border border-amber-400/35 inline-block shadow-xl">
+      <h2 id="waiting-headline" class="text-3xl sm:text-5xl font-black gold-shimmer-text mb-1">
+        فين الفريقين؟
+      </h2>
+      <p id="waiting-subheadline" class="text-sm sm:text-lg font-bold text-slate-300">
+        امسح رمز الـ QR بالموبايل لتسجيل اسم الفريق (0 / 2)
+      </p>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 items-center my-5">
+      <div id="wait-card-team1" class="royal-dark-card rounded-3xl p-5 text-center min-h-[190px] flex flex-col items-center justify-center border border-rose-500/30">
+        <div class="team-orb-3d mb-3">
+          <div class="team-orb-ring"></div>
+          <div class="team-orb-ring-reverse"></div>
+          <div class="team-orb-chassis">
+            <div class="team-orb-core-rose">
+              <svg class="w-7 h-7 drop-shadow-[0_3px_6px_rgba(0,0,0,0.8)]" viewBox="0 0 24 24">
+                <path fill="url(#gold3d)" d="M5 16L3 5l5.5 5L12 4l3.5 6L21 5l-2 11H5zm14 3c0 .6-.4 1-1 1H6c-.6 0-1-.4-1-1v-1h14v1z"/>
+                <circle cx="12" cy="12" r="2" fill="#ffffff"/>
+              </svg>
+            </div>
+          </div>
+        </div>
+        <div class="text-xs font-extrabold text-rose-400 mb-1">الفريق الأول</div>
+        <div id="wait-status-team1" class="text-xl font-black text-slate-500">في الانتظار</div>
+        <div id="wait-members-team1" class="mt-2 text-xs font-bold text-slate-300 flex flex-wrap gap-1 justify-center"></div>
+      </div>
+
+      <div class="flex flex-col items-center justify-center gap-3">
+        <div class="qr-white-card">
+          <div id="main-qrcode-container"></div>
+        </div>
+        <button onclick="copyRoomLink()" class="px-4 py-1.5 rounded-xl bg-slate-900 hover:bg-slate-800 border border-amber-400/40 text-amber-300 text-xs font-black cursor-pointer">
+          نسخ رابط الانضمام
+        </button>
+      </div>
+
+      <div id="wait-card-team2" class="royal-dark-card rounded-3xl p-5 text-center min-h-[190px] flex flex-col items-center justify-center border border-blue-500/30">
+        <div class="team-orb-3d mb-3">
+          <div class="team-orb-ring"></div>
+          <div class="team-orb-ring-reverse"></div>
+          <div class="team-orb-chassis">
+            <div class="team-orb-core-blue">
+              <svg class="w-7 h-7 drop-shadow-[0_3px_6px_rgba(0,0,0,0.8)]" viewBox="0 0 24 24">
+                <path fill="url(#gold3d)" d="M5 16L3 5l5.5 5L12 4l3.5 6L21 5l-2 11H5zm14 3c0 .6-.4 1-1 1H6c-.6 0-1-.4-1-1v-1h14v1z"/>
+                <circle cx="12" cy="12" r="2" fill="#ffffff"/>
+              </svg>
+            </div>
+          </div>
+        </div>
+        <div class="text-xs font-extrabold text-blue-400 mb-1">الفريق الثاني</div>
+        <div id="wait-status-team2" class="text-xl font-black text-slate-500">في الانتظار</div>
+        <div id="wait-members-team2" class="mt-2 text-xs font-bold text-slate-300 flex flex-wrap gap-1 justify-center"></div>
+      </div>
+    </div>
+
+    <div class="mt-4 flex flex-wrap items-center justify-center gap-3">
+      <button id="start-game-locked-btn" onclick="startMatchFromWaiting()" disabled class="btn-3d px-12 py-4 rounded-2xl bg-slate-900 border border-slate-800 text-slate-500 font-black text-lg sm:text-xl transition-all cursor-not-allowed">
+        في انتظار اكتمال الفريقين (0 / 2)
+      </button>
+      <button onclick="startLocalStudioMode()" class="btn-3d px-6 py-4 rounded-2xl bg-slate-900/90 hover:bg-slate-800 border border-sky-400/40 text-sky-200 font-black text-sm cursor-pointer">
+        بدء محلي مباشر بدون انتظار
+      </button>
+    </div>
+
+    <div class="mt-5 text-xs sm:text-sm font-black text-slate-300 flex flex-wrap items-center justify-center">
+      <span class="gold-shimmer-text ml-2">تحت إشراف:</span>
+      <span>أ.د/ مريهان مقلد</span>
+      <span class="gold-divider-3d"></span>
+      <span>أ.م.د/ مروة زغلول</span>
+      <span class="gold-divider-3d"></span>
+      <span>م.م/ هبة بهريز</span>
+    </div>
+  </div>
+</div>
+
+<!-- ================= 3. شاشة استوديو اللعب الرئيسية ================= -->
+<div id="host-game-screen" class="ui-layer hidden p-3 sm:p-4 justify-between gap-3">
+  <!-- لوحة النتائج العلوية -->
+  <div class="max-w-7xl w-full mx-auto grid grid-cols-1 lg:grid-cols-12 gap-3 items-center shrink-0">
+    <!-- الفريق الأول -->
+    <div id="host-team1-box" class="lg:col-span-4 royal-dark-card rounded-2xl p-3 sm:p-3.5 border-r-2 border-r-rose-500 flex items-center justify-between gap-2">
+      <div class="flex items-center gap-3 min-w-0">
+        <div class="team-orb-3d hidden sm:flex">
+          <div class="team-orb-ring"></div>
+          <div class="team-orb-ring-reverse"></div>
+          <div class="team-orb-chassis">
+            <div class="team-orb-core-rose">
+              <svg class="w-7 h-7 drop-shadow-[0_3px_6px_rgba(0,0,0,0.85)]" viewBox="0 0 24 24">
+                <path fill="url(#gold3d)" d="M5 16L3 5l5.5 5L12 4l3.5 6L21 5l-2 11H5zm14 3c0 .6-.4 1-1 1H6c-.6 0-1-.4-1-1v-1h14v1z"/>
+                <circle cx="12" cy="12" r="2" fill="#ffffff"/>
+              </svg>
+            </div>
+          </div>
+        </div>
+        <div class="min-w-0">
+          <div class="flex items-center gap-2">
+            <span id="team1-conn-dot" class="w-2.5 h-2.5 rounded-full bg-emerald-400 shrink-0" title="حالة الاتصال"></span>
+            <input id="team1-name-input" value="الفريق الأول" onchange="syncTeamNames()" class="bg-transparent font-black text-lg sm:text-2xl text-rose-400 w-28 sm:w-40 focus:outline-none border-b border-transparent focus:border-rose-400 truncate">
+            <span id="team1-streak-badge" class="hidden streak-badge px-2 py-0.5 rounded-full bg-orange-500/25 border border-orange-400 text-orange-200 text-[10px] font-black shrink-0">🔥 ×3</span>
+          </div>
+          <div class="flex flex-wrap items-center gap-1.5 mt-1">
+            <button onclick="adjustScore('team1', -10)" class="px-2 py-0.5 bg-slate-900 hover:bg-slate-800 border border-slate-700 rounded-lg text-[11px] font-bold text-slate-300 cursor-pointer">-10</button>
+            <button onclick="adjustScore('team1', 10)" class="px-2 py-0.5 bg-slate-900 hover:bg-slate-800 border border-amber-500/40 rounded-lg text-[11px] font-bold text-amber-300 cursor-pointer">+10</button>
+            <button onclick="manualBuzz('team1')" class="px-2.5 py-0.5 bg-rose-950/90 hover:bg-rose-800 border border-rose-400/50 rounded-lg text-[11px] font-black text-rose-200 cursor-pointer" title="جرس يدوي للفريق الأول (اختصار 1)">⚡ جرس (1)</button>
+          </div>
+          <div class="flex items-center gap-1.5 mt-1.5">
+            <button id="host-t1-fifty" onclick="useLifeline('team1', 'fifty')" class="px-2 py-0.5 rounded-md bg-amber-500/15 hover:bg-amber-500/30 border border-amber-400/50 text-amber-200 text-[10px] font-black cursor-pointer" title="حذف إجابتين (مرة واحدة)">50:50</button>
+            <button id="host-t1-friend" onclick="useLifeline('team1', 'friend')" class="px-2 py-0.5 rounded-md bg-emerald-500/15 hover:bg-emerald-500/30 border border-emerald-400/50 text-emerald-200 text-[10px] font-black cursor-pointer" title="الاستعانة بصديق 30 ثانية (مرة واحدة)">📞 صديق</button>
+          </div>
+        </div>
+      </div>
+      <div id="host-team1-score" class="text-4xl sm:text-6xl font-black gold-shimmer-text shrink-0">0</div>
+    </div>
+
+    <!-- الشعار والمرحلة -->
+    <div class="lg:col-span-4 royal-dark-card rounded-2xl p-2.5 text-center border-t border-t-amber-400/60">
+      <div class="flex items-center justify-center gap-2.5 mb-1.5">
+        <div class="logo-3d-ring-sm"><img src="mnu-logo.jpg" alt="" onerror="this.parentElement.style.display='none'"></div>
+        <div class="text-center px-1">
+          <div class="text-base sm:text-lg font-black gold-shimmer-text leading-tight">مسابقة العباقرة</div>
+          <div class="flex items-center justify-center gap-1.5 mt-0.5">
+            <button id="qr-topbar-btn" onclick="toggleQrModal(true)" class="px-2.5 py-0.5 rounded-full bg-slate-950 border border-amber-400/40 text-amber-300 text-[11px] font-bold hover:bg-amber-500/20 cursor-pointer inline-flex items-center gap-1">
+              <svg class="w-3 h-3" fill="url(#gold3d)" viewBox="0 0 24 24"><path d="M3 11h8V3H3v8zm2-6h4v4H5V5zM3 21h8v-8H3v8zm2-6h4v4H5v-4zm8-12v8h8V3h-8zm6 6h-4V5h4v4zm-6 4h2v2h-2v-2zm2 2h2v2h-2v-2zm-2 2h2v2h-2v-2zm4 0h2v2h-2v-2zm2 2h2v2h-2v-2zm0-4h2v2h-2v-2zm-4 4h2v2h-2v-2z"/></svg>
+              <span>QR</span>
+            </button>
+            <button onclick="toggleShortcutsModal(true)" class="px-2.5 py-0.5 rounded-full bg-slate-950 border border-slate-700 text-slate-300 text-[11px] font-bold hover:bg-slate-800 cursor-pointer">
+              الاختصارات
+            </button>
+            <button onclick="toggleFullscreen()" id="fs-btn" class="px-2.5 py-0.5 rounded-full bg-slate-950 border border-slate-700 text-slate-300 text-[11px] font-bold hover:bg-slate-800 cursor-pointer">
+              ملء الشاشة
+            </button>
+          </div>
+        </div>
+        <div class="logo-3d-ring-sm"><img src="pharmacy-logo.jpg" alt="" onerror="this.parentElement.style.display='none'"></div>
+        <div class="logo-3d-ring-sm"><img src="pharma-dept-logo.jpg" alt="" onerror="this.parentElement.style.display='none'"></div>
+      </div>
+      <div id="stage-indicator-pill" class="w-full bg-slate-950/90 border border-amber-400/35 rounded-xl py-1 px-3 text-xs sm:text-sm font-black text-amber-300">
+        المرحلة الأولى (10 أسئلة • 10 نقاط)
+      </div>
+    </div>
+
+    <!-- الفريق الثاني -->
+    <div id="host-team2-box" class="lg:col-span-4 royal-dark-card rounded-2xl p-3 sm:p-3.5 border-l-2 border-l-blue-500 flex items-center justify-between gap-2">
+      <div id="host-team2-score" class="text-4xl sm:text-6xl font-black gold-shimmer-text shrink-0">0</div>
+      <div class="flex items-center gap-3 text-left min-w-0">
+        <div class="min-w-0">
+          <div class="flex items-center justify-end gap-2">
+            <span id="team2-streak-badge" class="hidden streak-badge px-2 py-0.5 rounded-full bg-orange-500/25 border border-orange-400 text-orange-200 text-[10px] font-black shrink-0">🔥 ×3</span>
+            <input id="team2-name-input" value="الفريق الثاني" onchange="syncTeamNames()" class="bg-transparent text-left font-black text-lg sm:text-2xl text-blue-400 w-28 sm:w-40 focus:outline-none border-b border-transparent focus:border-blue-400 truncate">
+            <span id="team2-conn-dot" class="w-2.5 h-2.5 rounded-full bg-emerald-400 shrink-0" title="حالة الاتصال"></span>
+          </div>
+          <div class="flex flex-wrap items-center justify-end gap-1.5 mt-1">
+            <button onclick="manualBuzz('team2')" class="px-2.5 py-0.5 bg-blue-950/90 hover:bg-blue-800 border border-blue-400/50 rounded-lg text-[11px] font-black text-blue-200 cursor-pointer" title="جرس يدوي للفريق الثاني (اختصار 2)">⚡ جرس (2)</button>
+            <button onclick="adjustScore('team2', 10)" class="px-2 py-0.5 bg-slate-900 hover:bg-slate-800 border border-amber-500/40 rounded-lg text-[11px] font-bold text-amber-300 cursor-pointer">+10</button>
+            <button onclick="adjustScore('team2', -10)" class="px-2 py-0.5 bg-slate-900 hover:bg-slate-800 border border-slate-700 rounded-lg text-[11px] font-bold text-slate-300 cursor-pointer">-10</button>
+          </div>
+          <div class="flex items-center justify-end gap-1.5 mt-1.5">
+            <button id="host-t2-friend" onclick="useLifeline('team2', 'friend')" class="px-2 py-0.5 rounded-md bg-emerald-500/15 hover:bg-emerald-500/30 border border-emerald-400/50 text-emerald-200 text-[10px] font-black cursor-pointer" title="الاستعانة بصديق 30 ثانية (مرة واحدة)">📞 صديق</button>
+            <button id="host-t2-fifty" onclick="useLifeline('team2', 'fifty')" class="px-2 py-0.5 rounded-md bg-amber-500/15 hover:bg-amber-500/30 border border-amber-400/50 text-amber-200 text-[10px] font-black cursor-pointer" title="حذف إجابتين (مرة واحدة)">50:50</button>
+          </div>
+        </div>
+        <div class="team-orb-3d hidden sm:flex">
+          <div class="team-orb-ring"></div>
+          <div class="team-orb-ring-reverse"></div>
+          <div class="team-orb-chassis">
+            <div class="team-orb-core-blue">
+              <svg class="w-7 h-7 drop-shadow-[0_3px_6px_rgba(0,0,0,0.85)]" viewBox="0 0 24 24">
+                <path fill="url(#gold3d)" d="M5 16L3 5l5.5 5L12 4l3.5 6L21 5l-2 11H5zm14 3c0 .6-.4 1-1 1H6c-.6 0-1-.4-1-1v-1h14v1z"/>
+                <circle cx="12" cy="12" r="2" fill="#ffffff"/>
+              </svg>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- بطاقة السؤال والاختيارات -->
+  <div class="my-auto max-w-7xl w-full mx-auto">
+    <div id="buzz-banner" class="hidden mb-3 py-2.5 px-6 rounded-2xl text-center font-black text-xl sm:text-2xl shadow-2xl transition-all"></div>
+
+    <div class="royal-dark-card royal-crown-card rounded-3xl p-5 sm:p-8 relative">
+      <div class="w-full h-2 bg-slate-950 rounded-full overflow-hidden mb-4 border border-amber-500/25">
+        <div id="question-progress-bar" class="h-full gold-shimmer-bar transition-all duration-500" style="width: 3%"></div>
+      </div>
+
+      <div class="flex flex-wrap items-center justify-between gap-2 mb-3">
+        <div class="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-slate-950 border border-amber-400/45 text-amber-300 text-sm sm:text-base font-black shadow-lg">
+          <svg class="w-5 h-5" fill="url(#gold3d)" viewBox="0 0 24 24"><path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z"/></svg>
+          <span id="q-badge">سؤال 1 من 35</span>
+        </div>
+
+        <div class="flex items-center gap-2 sm:gap-3">
+          <div id="host-timer-pill" class="flex items-center gap-2 px-4 py-1 rounded-full bg-slate-950 border border-amber-400/75 text-amber-300 font-black text-2xl shadow-[0_0_20px_rgba(245,158,11,0.2)] transition-all">
+            <svg class="w-5 h-5" fill="url(#gold3d)" viewBox="0 0 24 24"><path d="M15 1H9v2h6V1zm-4 13h2V8h-2v6zm8.03-6.61l1.42-1.42c-.43-.51-.9-.99-1.41-1.41l-1.42 1.42C16.07 4.74 14.12 4 12 4c-4.97 0-9 4.03-9 9s4.02 9 9 9 9-4.03 9-9c0-2.12-.74-4.07-1.97-5.61zM12 20c-3.87 0-7-3.13-7-7s3.13-7 7-7 7 3.13 7 7-3.13 7-7 7z"/></svg>
+            <span id="host-timer">20</span>
+          </div>
+          <button onclick="toggleTimerPause()" id="pause-timer-btn" class="btn-3d py-2 px-3.5 rounded-xl bg-slate-900 hover:bg-slate-800 border border-amber-400/35 text-amber-200 text-xs sm:text-sm font-bold cursor-pointer">
+            إيقاف مؤقت
+          </button>
+          <button onclick="toggleMute()" id="mute-btn" class="btn-3d py-2 px-3.5 rounded-xl bg-slate-900 hover:bg-slate-800 border border-amber-400/35 text-amber-200 text-xs sm:text-sm font-bold cursor-pointer">
+            الصوت: مفعل
+          </button>
+        </div>
+      </div>
+
+      <h2 id="host-question-text" class="en-font text-xl sm:text-3xl lg:text-4xl font-extrabold text-white leading-snug text-center my-4 min-h-[76px] flex items-center justify-center drop-shadow-[0_4px_12px_rgba(0,0,0,0.85)]"></h2>
+
+      <div id="host-options-grid" class="grid grid-cols-1 sm:grid-cols-2 gap-3.5 sm:gap-4 mt-4"></div>
+
+      <div id="explanation-box" class="hidden mt-4 p-4 rounded-2xl bg-emerald-950/90 border border-emerald-400/50 text-emerald-100 text-base sm:text-lg font-bold text-right animate-slide-up shadow-xl"></div>
+    </div>
+  </div>
+
+  <!-- شريط تحكم المقدم السفلي -->
+  <div class="max-w-7xl w-full mx-auto royal-dark-card rounded-2xl p-3 sm:px-5 flex flex-wrap items-center justify-between gap-3 shrink-0">
+    <div class="flex flex-wrap items-center gap-2.5 sm:gap-3.5">
+      <button id="prev-q-btn" onclick="prevQuestion()" class="btn-3d px-4 py-3 rounded-xl bg-slate-900 hover:bg-slate-800 border border-slate-700 text-slate-300 font-black text-xs sm:text-sm cursor-pointer">
+        السابق
+      </button>
+      <button id="next-q-btn" onclick="nextQuestion()" class="dark-gold-btn px-6 py-3 rounded-xl font-black text-sm sm:text-base cursor-pointer inline-flex items-center gap-2">
+        <svg class="w-4 h-4" fill="url(#gold3d)" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+        <span id="next-q-btn-label" class="gold-shimmer-text">السؤال التالي (1/35)</span>
+      </button>
+      <button onclick="unlockBuzzers()" class="btn-3d px-5 py-3 rounded-xl bg-slate-900 hover:bg-slate-800 border border-amber-400/50 text-amber-300 font-black text-xs sm:text-sm cursor-pointer inline-flex items-center gap-2">
+        <svg class="w-4 h-4" fill="url(#gold3d)" viewBox="0 0 24 24"><path d="M12 22c1.1 0 2-.9 2-2h-4c0 1.1.89 2 2 2zm6-6v-5c0-3.07-1.64-5.64-4.5-6.32V4c0-.83-.67-1.5-1.5-1.5s-1.5.67-1.5 1.5v.68C7.63 5.36 6 7.92 6 11v5l-2 2v1h16v-1l-2-2z"/></svg>
+        <span>فتح الجرس</span>
+      </button>
+      <button onclick="revealAnswer()" class="btn-3d px-5 py-3 rounded-xl bg-sky-900/90 hover:bg-sky-800 border border-sky-400/50 text-sky-200 font-black text-xs sm:text-sm cursor-pointer inline-flex items-center gap-2">
+        <svg class="w-4 h-4 fill-sky-300" viewBox="0 0 24 24"><path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"/></svg>
+        <span>إظهار الإجابة</span>
+      </button>
+      <button onclick="toggleQuestionJumpModal(true)" class="btn-3d px-4 py-3 rounded-xl bg-slate-900 hover:bg-slate-800 border border-amber-400/35 text-amber-200 font-black text-xs sm:text-sm cursor-pointer">
+        خريطة الأسئلة
+      </button>
+      <button id="undo-btn" onclick="undoLastAction()" class="btn-3d px-3.5 py-3 rounded-xl bg-slate-900 hover:bg-slate-800 border border-slate-700 text-slate-300 font-black text-xs sm:text-sm cursor-pointer" title="تراجع عن آخر خطوة (Ctrl+Z)">
+        ↩ تراجع
+      </button>
+      <button onclick="playSoundboard('applause')" class="btn-3d px-3.5 py-3 rounded-xl bg-emerald-950/80 hover:bg-emerald-900 border border-emerald-400/45 text-emerald-200 font-black text-xs sm:text-sm cursor-pointer" title="تصفيق الجمهور">
+        👏 تصفيق
+      </button>
+    </div>
+
+    <div class="hidden xl:flex items-center text-xs font-black text-slate-200">
+      <span class="gold-shimmer-text ml-2">تحت إشراف:</span>
+      <span>أ.د/ مريهان مقلد</span>
+      <span class="gold-divider-3d"></span>
+      <span>أ.م.د/ مروة زغلول</span>
+      <span class="gold-divider-3d"></span>
+      <span>م.م/ هبة بهريز</span>
+    </div>
+
+    <div class="flex items-center">
+      <button onclick="endMatch()" class="btn-3d px-5 py-3 rounded-xl bg-rose-950/90 hover:bg-rose-900 border border-rose-500/50 text-rose-200 font-black text-xs sm:text-sm cursor-pointer inline-flex items-center gap-2">
+        <svg class="w-4 h-4" fill="url(#gold3d)" viewBox="0 0 24 24"><path d="M19 5h-2V3H7v2H5c-1.1 0-2 .9-2 2v1c0 2.55 1.92 4.63 4.39 4.94.63 1.5 1.98 2.63 3.61 2.96V19H7v2h10v-2h-4v-3.1c1.63-.33 2.98-1.46 3.61-2.96C19.08 12.63 21 10.55 21 8V7c0-1.1-.9-2-2-2z"/></svg>
+        <span>إنهاء وإعلان الفائز</span>
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ================= 4. شاشة الانتقال للمرحلة الثانية ================= -->
+<div id="stage-transition-modal" class="fixed inset-0 z-50 hidden glass-3d-backdrop items-center justify-center p-4">
+  <div class="royal-dark-card royal-crown-card winner-glow max-w-xl w-full rounded-3xl p-8 text-center my-auto animate-slide-up">
+    <div class="inline-block px-4 py-1 rounded-full bg-emerald-500/15 border border-emerald-500/40 text-emerald-300 text-xs font-black mb-3">
+      اكتملت المرحلة الأولى
+    </div>
+    <h2 class="text-3xl sm:text-5xl font-black gold-shimmer-text mb-3 leading-tight">
+      هننتقل للمرحلة الجاية! ⚡
+    </h2>
+    <p class="text-xl sm:text-2xl font-black text-white mb-2">
+      المرحلة الثانية: مرحلة الضعف (×2)
+    </p>
+    <p class="text-sm text-slate-300 mb-6">
+      الأسئلة القادمة كل سؤال بـ <span class="text-amber-300 font-black">20 نقطة كاملة</span>
+    </p>
+    <button id="continue-stage2-btn" onclick="startStageTwo()" class="dark-gold-btn px-10 py-4 rounded-2xl font-black text-lg cursor-pointer">
+      <span class="gold-shimmer-text">بدء المرحلة الثانية (الضعف)</span>
+    </button>
+  </div>
+</div>
+
+<!-- ================= 5. شاشة الموبايل ================= -->
+<div id="team-screen" class="ui-layer hidden p-4 justify-between gap-3">
+  <div class="royal-dark-card rounded-2xl p-3 px-3.5 flex flex-col gap-2 border-b border-amber-400/40 shrink-0">
+    <div class="flex items-center justify-center gap-2.5">
+      <div class="logo-3d-ring-sm"><img src="mnu-logo.jpg" alt="جامعة المنصورة الأهلية" onerror="this.parentElement.style.display='none'"></div>
+      <div class="logo-3d-ring-sm"><img src="pharmacy-logo.jpg" alt="كلية الصيدلة" onerror="this.parentElement.style.display='none'"></div>
+      <div class="logo-3d-ring-sm"><img src="pharma-dept-logo.jpg" alt="قسم الأدوية والسموم" onerror="this.parentElement.style.display='none'"></div>
+    </div>
+    <div class="flex items-center justify-between gap-2">
+      <div class="min-w-0">
+        <div class="text-[10px] text-amber-300 font-bold">اسم الفريق</div>
+        <h2 id="team-header-name" class="text-lg sm:text-2xl font-black text-white leading-tight truncate">—</h2>
+        <div id="team-header-members" class="text-[11px] text-slate-300 font-bold truncate"></div>
+      </div>
+      <div class="text-left bg-slate-950/90 px-4 py-1.5 rounded-xl border border-amber-400/35 shrink-0">
+        <div class="text-[10px] text-slate-400 font-bold">النقاط</div>
+        <div id="team-my-score" class="text-2xl font-black gold-shimmer-text leading-tight">0</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- تنبيه انقطاع الاتصال على الموبايل -->
+  <div id="mobile-disconnect-banner" class="hidden max-w-md w-full mx-auto p-3.5 rounded-2xl bg-rose-950/95 border border-rose-500 text-center">
+    <div class="text-sm font-black text-rose-200 mb-2">انقطع الاتصال بشاشة المسابقة!</div>
+    <button onclick="reconnectToHost()" class="dark-gold-btn px-6 py-2 rounded-xl text-sm font-black cursor-pointer">
+      <span class="gold-shimmer-text">إعادة الاتصال الآن</span>
+    </button>
+  </div>
+
+  <div id="team-play-area" class="my-auto flex flex-col items-center justify-center gap-4 w-full max-w-md mx-auto">
+    <div class="flex items-center gap-2">
+      <span id="team-stage-pill" class="px-4 py-1 rounded-full bg-slate-950 border border-amber-400/35 text-amber-300 text-xs font-black">
+        المرحلة الأولى (10 نقاط)
+      </span>
+      <span id="team-timer-pill" class="hidden px-3.5 py-1 rounded-full bg-amber-500/20 border border-amber-400 text-amber-300 text-xs font-black">
+        20 ث
+      </span>
+      <span id="team-mobile-streak" class="hidden streak-badge px-3 py-1 rounded-full bg-orange-500/25 border border-orange-400 text-orange-200 text-xs font-black">
+        🔥 متألق!
+      </span>
+    </div>
+
+    <div id="team-status-box" class="w-full royal-dark-card rounded-2xl p-3.5 text-center">
+      <div id="team-status-text" class="text-base sm:text-lg font-black text-amber-300">في انتظار اكتمال الفريقين وبدء المسابقة...</div>
+    </div>
+
+    <div id="team-buzzer-wrapper" class="buzzer-rig my-2">
+      <div id="buzzer-ring-anim" class="buzzer-orbit-ring hidden"></div>
+      <div id="buzzer-aura" class="buzzer-glow-aura bg-rose-500"></div>
+      <div class="buzzer-chassis">
+        <button id="team-buzzer-btn" onpointerdown="pressBuzzer()" disabled class="buzzer-dome buzzer-dome-team1">
+          <svg class="w-10 h-10 fill-white/95 mb-1 drop-shadow" viewBox="0 0 24 24"><path d="M7 2v11h3v9l7-12h-4l4-8z"/></svg>
+          <span id="buzzer-main-label" class="text-3xl sm:text-4xl font-black text-white tracking-wider drop-shadow-md">اضغط!</span>
+          <span id="buzzer-sub-label" class="en-font text-[11px] font-bold text-white/80 tracking-widest mt-1">BUZZER</span>
+        </button>
+      </div>
+    </div>
+
+    <div id="team-lifelines-bar" class="hidden w-full grid grid-cols-2 gap-2.5">
+      <button id="mob-fifty-btn" onclick="requestLifelineFromMobile('fifty')" class="btn-3d py-2.5 px-3 rounded-xl bg-amber-500/20 border border-amber-400/60 text-amber-200 font-black text-xs cursor-pointer">
+        ✨ حذف إجابتين (50:50)
+      </button>
+      <button id="mob-friend-btn" onclick="requestLifelineFromMobile('friend')" class="btn-3d py-2.5 px-3 rounded-xl bg-emerald-500/20 border border-emerald-400/60 text-emerald-200 font-black text-xs cursor-pointer">
+        📞 الاستعانة بصديق (30 ث)
+      </button>
+    </div>
+
+    <div id="team-options-box" class="hidden w-full grid grid-cols-1 gap-2.5 animate-slide-up"></div>
+  </div>
+
+  <div id="team-end-area" class="hidden my-auto w-full max-w-md mx-auto animate-slide-up">
+    <div id="team-end-card" class="royal-dark-card royal-crown-card rounded-3xl p-7 text-center">
+      <div class="flex items-center justify-center gap-3 mb-3">
+        <div class="logo-3d-ring-sm"><img src="mnu-logo.jpg" alt="" onerror="this.parentElement.style.display='none'"></div>
+        <div class="logo-3d-ring-sm"><img src="pharmacy-logo.jpg" alt="" onerror="this.parentElement.style.display='none'"></div>
+        <div class="logo-3d-ring-sm"><img src="pharma-dept-logo.jpg" alt="" onerror="this.parentElement.style.display='none'"></div>
+      </div>
+      <div class="finale-3d-rig">
+        <div class="finale-orbit-outer"></div>
+        <div class="finale-orbit-inner"></div>
+        <div class="finale-glow-aura"></div>
+        <div class="finale-dome-chassis">
+          <div class="finale-dome-core">
+            <div id="team-end-emoji" class="text-5xl grad-cap-anim">🏆🎓</div>
+          </div>
+        </div>
+      </div>
+      <h2 id="team-end-headline" class="text-4xl font-black gold-shimmer-text mb-3">مبروووك!</h2>
+      <p id="team-end-subtext" class="text-base font-bold text-slate-200 mb-6"></p>
+      <div class="bg-slate-950/90 rounded-2xl p-4 border border-amber-400/35">
+        <div class="text-xs text-slate-400 mb-1">النتيجة النهائية للمباراة</div>
+        <div id="team-end-scores" class="text-lg font-black text-amber-300"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="text-center text-[11px] text-slate-400 font-bold shrink-0">كلية الصيدلة • جامعة المنصورة الأهلية</div>
+</div>
+
+<!-- ================= نافذة الـ QR Code ================= -->
+<div id="qr-modal" class="fixed inset-0 z-50 hidden glass-3d-backdrop items-center justify-center p-4">
+  <div class="royal-dark-card royal-crown-card max-w-sm w-full rounded-3xl p-6 text-center my-auto">
+    <h3 class="text-xl font-black gold-shimmer-text mb-4">رمز الانضمام للمسابقة</h3>
+    <div class="qr-white-card mb-4">
+      <div id="qrcode-container"></div>
+    </div>
+    <div class="flex flex-col gap-2.5">
+      <button onclick="copyRoomLink()" class="btn-3d w-full py-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 border border-amber-400/40 text-amber-300 font-black text-sm cursor-pointer">
+        نسخ رابط الانضمام
+      </button>
+      <button onclick="toggleQrModal(false)" class="dark-gold-btn w-full py-3 rounded-xl font-black text-sm cursor-pointer">
+        <span class="gold-shimmer-text">إغلاق</span>
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ================= نافذة اختصارات لوحة المفاتيح ================= -->
+<div id="shortcuts-modal" class="fixed inset-0 z-50 hidden glass-3d-backdrop items-center justify-center p-4">
+  <div class="royal-dark-card royal-crown-card max-w-md w-full rounded-3xl p-6 text-right my-auto">
+    <h3 class="text-xl font-black gold-shimmer-text mb-4 text-center">اختصارات المقدم (لوحة المفاتيح)</h3>
+    <div class="space-y-2.5 text-sm font-bold text-slate-200 mb-5">
+      <div class="flex justify-between items-center bg-slate-950/80 px-3.5 py-2 rounded-xl border border-slate-800">
+        <span>جرس يدوي للفريق الأول</span>
+        <kbd class="en-font px-2.5 py-0.5 rounded bg-rose-950 border border-rose-500/50 text-rose-300">1</kbd>
+      </div>
+      <div class="flex justify-between items-center bg-slate-950/80 px-3.5 py-2 rounded-xl border border-slate-800">
+        <span>جرس يدوي للفريق الثاني</span>
+        <kbd class="en-font px-2.5 py-0.5 rounded bg-blue-950 border border-blue-500/50 text-blue-300">2</kbd>
+      </div>
+      <div class="flex justify-between items-center bg-slate-950/80 px-3.5 py-2 rounded-xl border border-slate-800">
+        <span>إيقاف / استئناف المؤقت</span>
+        <kbd class="en-font px-2.5 py-0.5 rounded bg-slate-900 border border-amber-400/40 text-amber-300">Space</kbd>
+      </div>
+      <div class="flex justify-between items-center bg-slate-950/80 px-3.5 py-2 rounded-xl border border-slate-800">
+        <span>فتح الجرس للجميع</span>
+        <kbd class="en-font px-2.5 py-0.5 rounded bg-slate-900 border border-amber-400/40 text-amber-300">B</kbd>
+      </div>
+      <div class="flex justify-between items-center bg-slate-950/80 px-3.5 py-2 rounded-xl border border-slate-800">
+        <span>إظهار الإجابة والتفسير</span>
+        <kbd class="en-font px-2.5 py-0.5 rounded bg-slate-900 border border-amber-400/40 text-amber-300">V</kbd>
+      </div>
+      <div class="flex justify-between items-center bg-slate-950/80 px-3.5 py-2 rounded-xl border border-slate-800">
+        <span>السؤال التالي / السابق</span>
+        <kbd class="en-font px-2.5 py-0.5 rounded bg-slate-900 border border-amber-400/40 text-amber-300">← / →</kbd>
+      </div>
+      <div class="flex justify-between items-center bg-slate-950/80 px-3.5 py-2 rounded-xl border border-slate-800">
+        <span>خريطة القفز السريع للأسئلة</span>
+        <kbd class="en-font px-2.5 py-0.5 rounded bg-slate-900 border border-amber-400/40 text-amber-300">G</kbd>
+      </div>
+      <div class="flex justify-between items-center bg-slate-950/80 px-3.5 py-2 rounded-xl border border-slate-800">
+        <span>كتم الصوت / ملء الشاشة</span>
+        <kbd class="en-font px-2.5 py-0.5 rounded bg-slate-900 border border-amber-400/40 text-amber-300">M / F</kbd>
+      </div>
+    </div>
+    <button onclick="toggleShortcutsModal(false)" class="dark-gold-btn w-full py-3 rounded-xl font-black text-sm cursor-pointer">
+      <span class="gold-shimmer-text">فهمت</span>
+    </button>
+  </div>
+</div>
+
+<!-- ================= نافذة خريطة القفز السريع للأسئلة ================= -->
+<div id="question-jump-modal" class="fixed inset-0 z-50 hidden glass-3d-backdrop items-center justify-center p-4 overflow-y-auto">
+  <div class="royal-dark-card royal-crown-card max-w-2xl w-full rounded-3xl p-6 text-center my-auto animate-slide-up">
+    <h3 class="text-xl sm:text-2xl font-black gold-shimmer-text mb-1">خريطة القفز السريع للأسئلة</h3>
+    <p class="text-xs text-slate-400 font-bold mb-4">اختر أي سؤال للانتقال إليه مباشرةً</p>
+    <div id="question-jump-grid" class="space-y-4 text-right mb-5 max-h-[60vh] overflow-y-auto px-1"></div>
+    <button onclick="toggleQuestionJumpModal(false)" class="dark-gold-btn w-full py-3 rounded-xl font-black text-sm cursor-pointer">
+      <span class="gold-shimmer-text">إغلاق</span>
+    </button>
+  </div>
+</div>
+
+<!-- ================= نافذة الاستعانة بصديق (30 ثانية) ================= -->
+<div id="friend-call-modal" class="fixed inset-0 z-50 hidden glass-3d-backdrop items-center justify-center p-4">
+  <div class="royal-dark-card royal-crown-card winner-glow max-w-md w-full rounded-3xl p-7 text-center my-auto animate-slide-up border-emerald-400/70">
+    <div class="inline-block px-4 py-1 rounded-full bg-emerald-500/20 border border-emerald-400 text-emerald-300 text-xs font-black mb-3">
+      وسيلة مساعدة • الاستعانة بصديق
+    </div>
+    <div class="text-5xl mb-3">📞</div>
+    <h3 id="friend-call-team-name" class="text-2xl sm:text-3xl font-black gold-shimmer-text mb-2">الفريق الأول</h3>
+    <p class="text-sm font-bold text-slate-300 mb-4">معاكم 30 ثانية للاستعانة بصديق أو زميل في القاعة!</p>
+    <div id="friend-call-timer" class="text-6xl font-black text-emerald-300 my-4 drop-shadow-[0_0_20px_rgba(52,211,153,0.5)]">30</div>
+    <button onclick="endFriendCall()" class="dark-gold-btn w-full py-3.5 rounded-2xl font-black text-base cursor-pointer mt-2">
+      <span class="gold-shimmer-text">إنهاء المكالمة واستئناف الإجابة</span>
+    </button>
+  </div>
+</div>
+
+<!-- ================= شاشة النتيجة النهائية للهوست ================= -->
+<div id="winner-modal" class="fixed inset-0 z-50 hidden glass-3d-backdrop items-center justify-center p-4 overflow-y-auto">
+  <div class="royal-dark-card royal-crown-card winner-glow max-w-xl w-full rounded-3xl p-7 sm:p-9 text-center my-auto animate-slide-up">
+    <div class="flex items-center justify-center gap-4 mb-3">
+      <div class="logo-3d-ring-sm"><img src="mnu-logo.jpg" alt="" onerror="this.parentElement.style.display='none'"></div>
+      <div class="logo-3d-ring-sm"><img src="pharmacy-logo.jpg" alt="" onerror="this.parentElement.style.display='none'"></div>
+      <div class="logo-3d-ring-sm"><img src="pharma-dept-logo.jpg" alt="" onerror="this.parentElement.style.display='none'"></div>
+    </div>
+
+    <div class="finale-3d-rig">
+      <div class="finale-orbit-outer"></div>
+      <div class="finale-orbit-inner"></div>
+      <div class="finale-glow-aura"></div>
+      <div class="finale-dome-chassis">
+        <div class="finale-dome-core">
+          <span class="text-5xl grad-cap-anim">🏆🎓</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="text-amber-300 font-bold text-sm mb-1">النتيجة النهائية • مسابقة العباقرة</div>
+    <h2 id="winner-title" class="text-3xl sm:text-5xl font-black gold-shimmer-text mb-3">الفائز</h2>
+    <div id="final-scores-summary" class="text-lg sm:text-xl font-bold text-amber-300 bg-slate-950/90 py-3 px-4 rounded-2xl border border-amber-400/35 mb-3"></div>
+    <div id="final-stats-summary" class="text-xs sm:text-sm font-bold text-slate-300 mb-4"></div>
+
+    <div class="flex flex-wrap items-center justify-center gap-2.5 mb-5">
+      <button id="tie-breaker-btn" onclick="startTieBreaker()" class="hidden dark-gold-btn winner-glow py-3 px-6 rounded-2xl font-black text-sm sm:text-base cursor-pointer border-amber-300">
+        <span class="gold-shimmer-text">⚡ فتح السؤال الفاصل (Golden Question)</span>
+      </button>
+      <button onclick="downloadResultCard()" class="btn-3d py-3 px-5 rounded-2xl bg-emerald-950/90 hover:bg-emerald-900 border border-emerald-400/50 text-emerald-200 font-black text-xs sm:text-sm cursor-pointer">
+        📸 تحميل بطاقة النتيجة (PNG)
+      </button>
+    </div>
+
+    <div class="border-t border-amber-400/25 pt-5">
+      <p class="text-lg sm:text-xl font-black text-amber-200 mb-4">نغير الفريقين ولا كفاية؟</p>
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+        <button onclick="switchToNewTeams()" class="dark-gold-btn py-3.5 px-5 rounded-2xl font-black text-base cursor-pointer flex items-center justify-center gap-2">
+          <svg class="w-5 h-5" fill="url(#gold3d)" viewBox="0 0 24 24"><path d="M12 6v3l4-4-4-4v3c-4.42 0-8 3.58-8 8 0 1.57.46 3.03 1.24 4.26L6.7 14.8c-.45-.83-.7-1.79-.7-2.8 0-3.31 2.69-6 6-6zm6.76 1.74L17.3 9.2c.44.84.7 1.79.7 2.8 0 3.31-2.69 6-6 6v-3l-4 4 4 4v-3c4.42 0 8-3.58 8-8 0-1.57-.46-3.03-1.24-4.26z"/></svg>
+          <span class="gold-shimmer-text">فريق تاني (جولة جديدة)</span>
+        </button>
+        <button onclick="closeCompetition()" class="dark-gold-btn py-3.5 px-5 rounded-2xl font-black text-base cursor-pointer flex items-center justify-center gap-2">
+          <span>🎓</span>
+          <span class="gold-shimmer-text">كفاية (ختام المسابقة)</span>
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ================= شاشة الختام النهائية عند الهوست ================= -->
+<div id="goodbye-screen" class="fixed inset-0 z-50 hidden glass-3d-backdrop items-center justify-center p-4 overflow-y-auto">
+  <div class="royal-dark-card royal-crown-card max-w-2xl w-full rounded-3xl p-8 sm:p-10 text-center my-auto animate-slide-up">
+    <div class="flex items-center justify-center gap-6 mb-4">
+      <div class="logo-3d-ring"><img src="mnu-logo.jpg" alt="" onerror="this.parentElement.style.display='none'"></div>
+      <div class="logo-3d-ring"><img src="pharmacy-logo.jpg" alt="" onerror="this.parentElement.style.display='none'"></div>
+      <div class="logo-3d-ring"><img src="pharma-dept-logo.jpg" alt="" onerror="this.parentElement.style.display='none'"></div>
+    </div>
+
+    <div class="finale-3d-rig">
+      <div class="finale-orbit-outer"></div>
+      <div class="finale-orbit-inner"></div>
+      <div class="finale-glow-aura"></div>
+      <div class="finale-dome-chassis">
+        <div class="finale-dome-core">
+          <span class="text-5xl sm:text-6xl grad-cap-anim">🎓✨</span>
+        </div>
+      </div>
+    </div>
+
+    <h2 class="text-3xl sm:text-5xl font-black gold-shimmer-text mb-2">
+      تمت مسابقة العباقرة بنجاح!
+    </h2>
+    <p class="text-base sm:text-lg font-bold text-slate-200 mb-4">
+      كل الشكر والتقدير لجميع الفرق المشاركة على الأداء العلمي المشرف
+    </p>
+
+    <div id="goodbye-final-scores" class="text-sm sm:text-lg font-black text-amber-300 bg-slate-950/90 border border-amber-400/35 rounded-xl py-2.5 px-6 mb-5 inline-block shadow-lg"></div>
+
+    <div class="text-sm sm:text-base font-extrabold text-amber-200 mb-5">
+      جامعة المنصورة الأهلية • كلية الصيدلة • قسم الأدوية والسموم
+    </div>
+
+    <div class="bg-slate-950/90 border border-amber-400/35 rounded-2xl py-3.5 px-7 mb-6 inline-block shadow-inner">
+      <div class="text-xs gold-shimmer-text font-extrabold mb-1.5">تحت إشراف</div>
+      <div class="text-sm sm:text-base font-black text-white flex flex-wrap items-center justify-center">
+        <span>أ.د/ مريهان مقلد</span>
+        <span class="gold-divider-3d"></span>
+        <span>أ.م.د/ مروة زغلول</span>
+        <span class="gold-divider-3d"></span>
+        <span>م.م/ هبة بهريز</span>
+      </div>
+    </div>
+
+    <div class="flex flex-wrap items-center justify-center gap-3">
+      <button onclick="downloadResultCard()" class="btn-3d px-6 py-3 rounded-xl bg-emerald-950/90 hover:bg-emerald-900 border border-emerald-400/50 text-emerald-200 font-black text-sm cursor-pointer">
+        📸 تحميل بطاقة النتيجة (PNG)
+      </button>
+      <button onclick="returnToLobby()" class="dark-gold-btn px-8 py-3 rounded-xl font-black text-sm cursor-pointer">
+        <span class="gold-shimmer-text">العودة للشاشة الرئيسية</span>
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ================= شاشة العد التنازلي الدرامي (3-2-1 انطلق) ================= -->
+<div id="preshow-countdown-modal" class="fixed inset-0 z-[70] hidden glass-3d-backdrop items-center justify-center p-4">
+  <div class="text-center select-none">
+    <div id="countdown-stage-label" class="text-lg sm:text-2xl font-black text-amber-300 mb-3 tracking-wide">استعدوا للانطلاق...</div>
+    <div id="countdown-big-number" class="text-8xl sm:text-[10rem] font-black gold-shimmer-text leading-none countdown-pop">3</div>
+  </div>
+</div>
+
+<script>
+  const DEFAULT_QUESTIONS = [
+    // --- الفقرة الأولى: أسئلة مقاومة الأنسولين والسلفونيلوريا (10 أسئلة بـ 10 نقاط) ---
+    {
+      num: 1, stage: 1,
+      q: "Q1. Insulin resistance is defined as:",
+      opts: ["Increased insulin secretion from pancreatic beta cells.", "Failure of body cells to respond adequately to insulin.", "Complete absence of insulin secretion.", "Increased glucose uptake by peripheral tissues."],
+      ans: 1,
+      exp: "الخلية لا تستجيب للإنسولين بشكل كافٍ، وبالتالي يحتاج الجسم جرعات أكبر لتحقيق نفس التأثير."
+    },
+    {
+      num: 2, stage: 1,
+      q: "Q2. Which of the following drugs may cause insulin resistance?",
+      opts: ["Metformin", "Pioglitazone", "Corticosteroids", "Acarbose"],
+      ans: 2,
+      exp: "Corticosteroids can cause insulin resistance."
+    },
+    {
+      num: 3, stage: 1,
+      q: "Q3. Which of the following is NOT a precipitating factor for insulin resistance?",
+      opts: ["Pregnancy", "Severe infection", "Corticosteroids", "Increased insulin receptor sensitivity"],
+      ans: 3,
+      exp: "زيادة حساسية المستقبلات تقلل insulin resistance."
+    },
+    {
+      num: 4, stage: 1,
+      q: "Q4. Which of the following drugs improves insulin receptor sensitivity?",
+      opts: ["Glibenclamide", "Metformin", "Repaglinide", "Chlorpropamide"],
+      ans: 1,
+      exp: "Metformin improves insulin sensitivity."
+    },
+    {
+      num: 5, stage: 1,
+      q: "Q5. Which of the following is a first-generation sulfonylurea?",
+      opts: ["Glimepiride", "Gliclazide", "Tolbutamide", "Glibenclamide"],
+      ans: 2,
+      exp: "First generation: Tolbutamide, Chlorpropamide. | Second generation: Glibenclamide, Gliclazide. | Third generation: Glimepiride."
+    },
+    {
+      num: 6, stage: 1,
+      q: "Q6. Which of the following is a third-generation sulfonylurea?",
+      opts: ["Tolbutamide", "Chlorpropamide", "Gliclazide", "Glimepiride"],
+      ans: 3,
+      exp: "Glimepiride is a third-generation sulfonylurea."
+    },
+    {
+      num: 7, stage: 1,
+      q: "Q7. Sulfonylureas increase insulin secretion by:",
+      opts: ["Opening ATP-sensitive potassium channels.", "Closing ATP-sensitive potassium channels.", "Blocking calcium channels.", "Activating glucagon secretion."],
+      ans: 1,
+      exp: "Sulfonylureas close ATP-sensitive potassium channels to stimulate insulin release."
+    },
+    {
+      num: 8, stage: 1,
+      q: "Q8. Closure of potassium channels in pancreatic beta cells results in:",
+      opts: ["Hyperpolarization.", "Beta-cell depolarization.", "Decreased calcium influx.", "Decreased insulin secretion."],
+      ans: 1,
+      exp: "K+ channel closure → Depolarization → Ca²⁺ influx → Insulin release."
+    },
+    {
+      num: 9, stage: 1,
+      q: "Q9. Sulfonylureas increase insulin secretion mainly by:",
+      opts: ["Increasing insulin secreted during each pulse.", "Increasing basal insulin secretion only.", "Increasing insulin receptor numbers.", "Inhibiting hepatic gluconeogenesis."],
+      ans: 0,
+      exp: "They increase the amount of insulin secreted during each pulse."
+    },
+    {
+      num: 10, stage: 1,
+      q: "Q10. Which of the following is a major adverse effect of sulfonylureas?",
+      opts: ["Lactic acidosis", "Hypoglycemia", "Flatulence", "Pancreatitis"],
+      ans: 1,
+      exp: "Hypoglycemia is a major adverse effect of sulfonylureas."
+    },
+
+    // --- الفقرة الثانية: مرحلة الضعف (10 أسئلة بـ 20 نقطة) ---
+    {
+      num: 11, stage: 2,
+      q: "Q11. Which sulfonylurea is particularly associated with prolonged hypoglycemia?",
+      opts: ["Chlorpropamide", "Tolbutamide", "Gliclazide", "Glimepiride"],
+      ans: 0,
+      exp: "Chlorpropamide is associated with prolonged hypoglycemia."
+    },
+    {
+      num: 12, stage: 2,
+      q: "Q12. Sulfonylureas are ineffective in type 1 DM because they:",
+      opts: ["Increase intestinal glucose absorption.", "Require functioning pancreatic beta cells.", "Block insulin receptors.", "Increase glucagon secretion."],
+      ans: 1,
+      exp: "They require functioning pancreatic beta cells which are destroyed in Type 1 DM."
+    },
+    {
+      num: 13, stage: 2,
+      q: "Q13. Which of the following belongs to the meglitinide group?",
+      opts: ["Metformin", "Repaglinide", "Pioglitazone", "Acarbose"],
+      ans: 1,
+      exp: "Repaglinide belongs to meglitinides."
+    },
+    {
+      num: 14, stage: 2,
+      q: "Q14. Meglitinides should be taken:",
+      opts: ["Immediately after meals.", "Just before meals.", "At bedtime.", "Once weekly."],
+      ans: 1,
+      exp: "Fast onset + Short duration → control of postprandial hyperglycemia."
+    },
+    {
+      num: 15, stage: 2,
+      q: "Q15. Which drug can be used in patients allergic to sulfonylureas because it does not contain sulfur?",
+      opts: ["Repaglinide", "Glibenclamide", "Chlorpropamide", "Glimepiride"],
+      ans: 0,
+      exp: "Repaglinide does not contain sulfur and can be used in sulfa allergy."
+    },
+    {
+      num: 16, stage: 2,
+      q: "Q16. The major adverse effect of meglitinides is:",
+      opts: ["Lactic acidosis", "Hypoglycemia", "Fluid retention", "Hepatotoxicity"],
+      ans: 1,
+      exp: "Hypoglycemia is a major adverse effect of meglitinides."
+    },
+    {
+      num: 17, stage: 2,
+      q: "Q17. Metformin decreases blood glucose mainly by:",
+      opts: ["Increasing insulin secretion.", "Decreasing hepatic gluconeogenesis.", "Closing potassium channels.", "Increasing glucagon secretion."],
+      ans: 1,
+      exp: "Metformin decreases hepatic gluconeogenesis."
+    },
+    {
+      num: 18, stage: 2,
+      q: "Q18. Why does metformin rarely cause hypoglycemia when used alone?",
+      opts: ["It increases glucagon secretion.", "It does not stimulate insulin secretion.", "It blocks glucose absorption completely.", "It increases insulin degradation."],
+      ans: 1,
+      exp: "It does not stimulate insulin secretion directly."
+    },
+    {
+      num: 19, stage: 2,
+      q: "Q19. Which of the following is the most common adverse effect of metformin?",
+      opts: ["GIT disturbances", "Hypoglycemia", "Peripheral edema", "Pancreatitis"],
+      ans: 0,
+      exp: "GIT disturbances are very common with metformin."
+    },
+    {
+      num: 20, stage: 2,
+      q: "Q20. Metformin-associated lactic acidosis is more likely to occur in patients with:",
+      opts: ["Severe renal impairment.", "Mild headache.", "Hyperthyroidism.", "Iron deficiency anemia."],
+      ans: 0,
+      exp: "Severe renal impairment increases the risk of lactic acidosis with metformin."
+    },
+
+    // --- الفقرة الثالثة: أسئلة تحت الضغط (15 سؤال بـ 20 نقطة - 15 ثانية) ---
+    {
+      num: 21, stage: 3,
+      q: "Q21. Long-term use of metformin may decrease the absorption of:",
+      opts: ["Vitamin C", "Vitamin B12", "Vitamin D", "Vitamin K"],
+      ans: 1,
+      exp: "Long-term use may decrease Vitamin B12 absorption."
+    },
+    {
+      num: 22, stage: 3,
+      q: "Q22. Metformin may be beneficial in patients with polycystic ovary syndrome (PCOS) because it:",
+      opts: ["Increases androgen levels.", "Lowers androgen levels and improves ovulation.", "Increases insulin resistance.", "Suppresses ovarian function."],
+      ans: 1,
+      exp: "It lowers androgen levels and improves ovulation in PCOS."
+    },
+    {
+      num: 23, stage: 3,
+      q: "Q23. Thiazolidinediones act mainly through activation of:",
+      opts: ["PPAR-γ", "DPP-4", "ATP-sensitive potassium channels", "Alpha-glucosidase"],
+      ans: 0,
+      exp: "Thiazolidinediones act through PPAR-gamma activation."
+    },
+    {
+      num: 24, stage: 3,
+      q: "Q24. Which of the following is a thiazolidinedione?",
+      opts: ["Sitagliptin", "Pioglitazone", "Repaglinide", "Acarbose"],
+      ans: 1,
+      exp: "Pioglitazone is a thiazolidinedione."
+    },
+    {
+      num: 25, stage: 3,
+      q: "Q25. Thiazolidinediones increase glucose uptake mainly by increasing the number of:",
+      opts: ["GLUT1", "GLUT2", "GLUT3", "GLUT4"],
+      ans: 3,
+      exp: "They increase GLUT4 transporter expression."
+    },
+    {
+      num: 26, stage: 3,
+      q: "Q26. Why do thiazolidinediones have a slow onset of action?",
+      opts: ["They are poorly absorbed.", "They depend on gene regulation.", "They require insulin injection.", "They inhibit intestinal enzymes."],
+      ans: 1,
+      exp: "Their action depends on genomic regulation via PPAR-gamma."
+    },
+    {
+      num: 27, stage: 3,
+      q: "Q27. Which thiazolidinedione has a more favorable effect on serum lipids?",
+      opts: ["Rosiglitazone", "Pioglitazone", "Both have identical effects.", "Neither affects serum lipids."],
+      ans: 1,
+      exp: "Pioglitazone has a more favorable effect on serum lipids."
+    },
+    {
+      num: 28, stage: 3,
+      q: "Q28. Thiazolidinediones should be avoided in patients with:",
+      opts: ["Bronchial asthma", "Congestive heart failure", "Iron deficiency anemia", "Peptic ulcer"],
+      ans: 1,
+      exp: "Fluid retention → Peripheral edema → worsens congestive heart failure."
+    },
+    {
+      num: 29, stage: 3,
+      q: "Q29. Which drug has a greater reported risk of myocardial infarction compared with pioglitazone in the lecture?",
+      opts: ["Rosiglitazone", "Metformin", "Repaglinide", "Acarbose"],
+      ans: 0,
+      exp: "Rosiglitazone has a greater reported risk of myocardial infarction."
+    },
+    {
+      num: 30, stage: 3,
+      q: "Q30. Acarbose decreases carbohydrate digestion by inhibiting:",
+      opts: ["DPP-4", "Alpha-glucosidase", "PPAR-γ", "SGLT2"],
+      ans: 1,
+      exp: "Acarbose inhibits alpha-glucosidase in the intestinal brush border."
+    },
+    {
+      num: 31, stage: 3,
+      q: "Q31. GLP-1 is normally inactivated by which enzyme?",
+      opts: ["Alpha-glucosidase", "DPP-4", "ACE", "Lipase"],
+      ans: 1,
+      exp: "GLP-1 is inactivated by DPP-4."
+    },
+    {
+      num: 32, stage: 3,
+      q: "Q32. Which of the following is a GLP-1 mimetic?",
+      opts: ["Sitagliptin", "Exenatide", "Dapagliflozin", "Pramlintide"],
+      ans: 1,
+      exp: "Exenatide is a GLP-1 mimetic."
+    },
+    {
+      num: 33, stage: 3,
+      q: "Q33. GLP-1 mimetics produce all the following effects EXCEPT:",
+      opts: ["Increased insulin secretion.", "Decreased glucagon secretion.", "Delayed gastric emptying.", "Increased appetite."],
+      ans: 3,
+      exp: "GLP-1 mimetics decrease appetite."
+    },
+    {
+      num: 34, stage: 3,
+      q: "Q34. Sitagliptin lowers blood glucose by:",
+      opts: ["Inhibiting DPP-4.", "Activating PPAR-γ.", "Blocking SGLT2.", "Inhibiting alpha-glucosidase."],
+      ans: 0,
+      exp: "Sitagliptin inhibits DPP-4."
+    },
+    {
+      num: 35, stage: 3,
+      q: "Q35. Pramlintide is a synthetic analog of:",
+      opts: ["GLP-1", "Glucagon", "Amylin", "Insulin"],
+      ans: 2,
+      exp: "Pramlintide is a synthetic analog of amylin."
+    }
+  ];
+
+  const TIE_BREAKER_QUESTIONS = [
+    {
+      num: "⚡", stage: "tiebreaker",
+      q: "Golden Q1. Which class of antidiabetic drugs lowers blood glucose by inhibiting renal glucose reabsorption in the proximal tubule?",
+      opts: ["DPP-4 inhibitors", "SGLT2 inhibitors", "Thiazolidinediones", "Sulfonylureas"],
+      ans: 1,
+      exp: "SGLT2 inhibitors (e.g., Dapagliflozin, Empagliflozin) block glucose reabsorption in the proximal renal tubule."
+    },
+    {
+      num: "⚡", stage: "tiebreaker",
+      q: "Golden Q2. Which oral antidiabetic agent is strictly contraindicated in patients with an eGFR < 30 mL/min due to lactic acidosis risk?",
+      opts: ["Linagliptin", "Metformin", "Repaglinide", "Pioglitazone"],
+      ans: 1,
+      exp: "Metformin is contraindicated in severe renal impairment (eGFR < 30 mL/min) due to lactic acidosis risk."
+    },
+    {
+      num: "⚡", stage: "tiebreaker",
+      q: "Golden Q3. Which of the following antidiabetic drugs is associated with significant weight LOSS rather than weight gain?",
+      opts: ["Glibenclamide", "Pioglitazone", "Exenatide", "Insulin glargine"],
+      ans: 2,
+      exp: "GLP-1 receptor agonists like Exenatide delay gastric emptying and decrease appetite, promoting weight loss."
+    }
+  ];
+
+  let COMPETITION_QUESTIONS = DEFAULT_QUESTIONS.map(q => ({ ...q }));
+  let tieBreakerIdx = 0;
+  let lastMobileOptsKey = '';
+
+  let roomId = '';
+  let myRole = ''; // 'host' | 'team1' | 'team2'
+  let isLocalMode = false;
+  let savedTeamName = '';
+  let savedTeamMembers = [];
+  let stateHistory = [];
+  let questionOpenedAt = 0;
+  let peer = null;
+  let hostConn = null;
+  let teamConns = { team1: null, team2: null };
+  let probePeer = null;
+
+  function createFreshState() {
+    return {
+      team1Name: 'الفريق الأول',
+      team2Name: 'الفريق الثاني',
+      team1Members: [],
+      team2Members: [],
+      buzzReactionMs: null,
+      team1Connected: false,
+      team2Connected: false,
+      gameStarted: false,
+      team1Score: 0,
+      team2Score: 0,
+      team1Correct: 0,
+      team2Correct: 0,
+      team1Streak: 0,
+      team2Streak: 0,
+      isTieBreaker: false,
+      qIndex: -1,
+      stage: 1,
+      showTransition: false,
+      showPressureTransition: false,
+      currentQ: null,
+      buzzerOpen: false,
+      buzzedTeam: null,
+      lockedTeams: [],
+      wrongOptions: [],
+      eliminatedOptions: [],
+      team1Lifelines: { fifty: true, friend: true },
+      team2Lifelines: { fifty: true, friend: true },
+      friendCallActive: false,
+      friendCallTeam: null,
+      friendCallTimer: 30,
+      revealed: false,
+      selectedOpt: null,
+      statusMessage: '',
+      matchEnded: false,
+      winnerTeam: null,
+      sessionClosed: false,
+      timerPaused: false,
+      timer: 20
+    };
+  }
+
+  let roomState = createFreshState();
+  let timerInterval = null;
+  let friendInterval = null;
+  let heartbeatInterval = null;
+  let autoReconnectTimer = null;
+  let reconnectAttempts = 0;
+  let wakeLockSentinel = null;
+  let isMuted = false;
+  let mainSynth = null;
+  let tickSynth = null;
+
+  // منع قفل شاشة الموبايل أثناء المسابقة (Screen Wake Lock API)
+  async function requestScreenWakeLock() {
+    try {
+      if ('wakeLock' in navigator && !wakeLockSentinel) {
+        wakeLockSentinel = await navigator.wakeLock.request('screen');
+        wakeLockSentinel.addEventListener('release', () => { wakeLockSentinel = null; });
+      }
+    } catch (e) {}
+  }
+
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'visible' && (myRole === 'team1' || myRole === 'team2')) {
+      requestScreenWakeLock();
+    }
+  });
+
+  // حفظ واستئناف المباراة تلقائياً (Auto-Save)
+  function saveMatchState() {
+    if (myRole !== 'host' || !roomState.gameStarted || roomState.matchEnded) return;
+    try {
+      localStorage.setItem('abakera_saved_match', JSON.stringify({
+        roomState: roomState,
+        isLocalMode: isLocalMode,
+        savedAt: Date.now()
+      }));
+    } catch (e) {}
+  }
+
+  function clearSavedMatch() {
+    try { localStorage.removeItem('abakera_saved_match'); } catch (e) {}
+    const box = document.getElementById('resume-match-box');
+    if (box) box.classList.add('hidden');
+  }
+
+  function checkSavedMatchUI() {
+    try {
+      const raw = localStorage.getItem('abakera_saved_match');
+      if (!raw) return;
+      const parsed = JSON.parse(raw);
+      if (parsed && parsed.roomState && parsed.roomState.gameStarted && !parsed.roomState.matchEnded) {
+        const s = parsed.roomState;
+        const box = document.getElementById('resume-match-box');
+        const btn = document.getElementById('resume-match-btn');
+        if (box && btn) {
+          const qNum = Math.max(1, s.qIndex + 1);
+          btn.innerText = `استئناف المباراة السابقة (س${qNum} • ${s.team1Score} : ${s.team2Score})`;
+          box.classList.remove('hidden');
+        }
+      }
+    } catch (e) {}
+  }
+
+  function resumeSavedMatch() {
+    ensureAudioReady();
+    try {
+      const raw = localStorage.getItem('abakera_saved_match');
+      if (!raw) return;
+      const parsed = JSON.parse(raw);
+      if (!parsed || !parsed.roomState) return;
+      roomState = Object.assign(createFreshState(), parsed.roomState);
+      roomState.friendCallActive = false;
+      roomState.timerPaused = true;
+      isLocalMode = true; // استئناف آمن ومباشر بدون انتظار
+      myRole = 'host';
+      roomState.team1Connected = true;
+      roomState.team2Connected = true;
+
+      document.getElementById('team1-name-input').value = roomState.team1Name;
+      document.getElementById('team2-name-input').value = roomState.team2Name;
+      document.getElementById('lobby-screen').classList.add('hidden');
+      document.getElementById('host-waiting-screen').classList.add('hidden');
+      document.getElementById('host-game-screen').classList.remove('hidden');
+
+      renderUI();
+      showToast('تم استئناف المباراة — اضغط "استئناف المؤقت" للمتابعة', 'success');
+    } catch (e) {
+      showToast('تعذر استئناف المباراة المحفوظة', 'error');
+    }
+  }
+
+  // إشعارات أنيقة داخل الصفحة (بديل alert)
+  function showToast(message, type = 'info') {
+    const container = document.getElementById('toast-container');
+    if (!container) return;
+    const el = document.createElement('div');
+    const styles = {
+      info: 'bg-slate-900/95 border border-amber-400/60 text-amber-200',
+      success: 'bg-emerald-950/95 border border-emerald-400/70 text-emerald-200',
+      error: 'bg-rose-950/95 border border-rose-500/70 text-rose-200'
+    };
+    el.className = `toast-item ${styles[type] || styles.info}`;
+    el.innerText = message;
+    container.appendChild(el);
+    setTimeout(() => {
+      el.style.opacity = '0';
+      el.style.transform = 'translateY(-8px)';
+      el.style.transition = 'all 0.25s ease';
+      setTimeout(() => el.remove(), 260);
+    }, 3200);
+  }
+
+  async function ensureAudioReady() {
+    try {
+      if (typeof Tone === 'undefined') return;
+      await Tone.start();
+      if (!mainSynth) {
+        mainSynth = new Tone.PolySynth(Tone.Synth).toDestination();
+      }
+      if (!tickSynth) {
+        tickSynth = new Tone.MembraneSynth({
+          pitchDecay: 0.015,
+          octaves: 3,
+          oscillator: { type: 'sine' },
+          envelope: { attack: 0.001, decay: 0.09, sustain: 0, release: 0.03 }
+        }).toDestination();
+        tickSynth.volume.value = -4;
+      }
+    } catch (e) {}
+  }
+
+  async function playTone(type) {
+    if (isMuted) return;
+    try {
+      await ensureAudioReady();
+      if (!mainSynth || !tickSynth) return;
+      if (type === 'buzz') {
+        mainSynth.triggerAttackRelease(["C5", "G5", "C6"], "8n");
+      } else if (type === 'correct') {
+        mainSynth.triggerAttackRelease(["C5", "E5", "G5", "C6"], "8n");
+      } else if (type === 'wrong') {
+        mainSynth.triggerAttackRelease(["F3", "B2"], "4n");
+      } else if (type === 'next') {
+        mainSynth.triggerAttackRelease(["E4", "A4"], "16n");
+      } else if (type === 'win') {
+        mainSynth.triggerAttackRelease(["C5", "E5", "G5", "B5", "C6"], "4n");
+      } else if (type === 'tick') {
+        const note = (roomState.timer % 2 === 0) ? "G4" : "E4";
+        tickSynth.triggerAttackRelease(note, "32n");
+      } else if (type === 'tick_urgent') {
+        const now = Tone.now();
+        tickSynth.triggerAttackRelease("C5", "32n", now);
+        tickSynth.triggerAttackRelease("G5", "32n", now + 0.12);
+      } else if (type === 'timeout') {
+        mainSynth.triggerAttackRelease(["G3", "C#3", "C3"], "2n");
+      } else if (type === 'countdown') {
+        mainSynth.triggerAttackRelease(["A4", "E5"], "16n");
+      } else if (type === 'go') {
+        mainSynth.triggerAttackRelease(["C5", "E5", "G5", "C6"], "4n");
+      } else if (type === 'streak') {
+        const now = Tone.now();
+        mainSynth.triggerAttackRelease(["E5", "G#5"], "16n", now);
+        mainSynth.triggerAttackRelease(["B5", "E6"], "8n", now + 0.12);
+      }
+    } catch (e) {}
+  }
+
+  // ===== مؤثرات المقدم الصوتية (Soundboard) بدون ملفات خارجية =====
+  async function playSoundboard(kind) {
+    if (isMuted) {
+      showToast('الصوت مكتوم حالياً — فعّله أولاً', 'info');
+      return;
+    }
+    try {
+      await ensureAudioReady();
+      if (typeof Tone === 'undefined') return;
+      const now = Tone.now();
+      if (kind === 'drumroll') {
+        const snare = new Tone.NoiseSynth({
+          noise: { type: 'white' },
+          envelope: { attack: 0.002, decay: 0.06, sustain: 0 }
+        }).toDestination();
+        snare.volume.value = -10;
+        for (let i = 0; i < 20; i++) {
+          snare.triggerAttackRelease('32n', now + i * 0.085);
+        }
+        setTimeout(() => { try { snare.dispose(); } catch (e) {} }, 2500);
+        showToast('🥁 قرع الطبول...', 'info');
+      } else if (kind === 'applause') {
+        const filter = new Tone.Filter(1200, 'bandpass').toDestination();
+        const clap = new Tone.NoiseSynth({
+          noise: { type: 'pink' },
+          envelope: { attack: 0.08, decay: 1.8, sustain: 0.1, release: 0.5 }
+        }).connect(filter);
+        clap.volume.value = -4;
+        clap.triggerAttackRelease('2n', now);
+        if (mainSynth) mainSynth.triggerAttackRelease(['C5', 'E5', 'G5'], '4n', now + 0.05);
+        fireCelebrationConfetti();
+        setTimeout(() => { try { clap.dispose(); filter.dispose(); } catch (e) {} }, 3000);
+        showToast('👏 تصفيق حار من القاعة!', 'success');
+      }
+    } catch (e) {}
+  }
+
+  // ===== العد التنازلي الدرامي (3 - 2 - 1 - انطلق!) =====
+  function runPreShowCountdown(stageLabel, onDone) {
+    const modal = document.getElementById('preshow-countdown-modal');
+    const lbl = document.getElementById('countdown-stage-label');
+    const numEl = document.getElementById('countdown-big-number');
+    if (!modal || !numEl) {
+      if (typeof onDone === 'function') onDone();
+      return;
+    }
+    if (lbl) lbl.innerText = stageLabel || 'استعدوا للانطلاق...';
+    modal.classList.remove('hidden');
+    modal.classList.add('flex');
+
+    const steps = ['3', '2', '1', 'انطلق!'];
+    let idx = 0;
+    const tickStep = () => {
+      if (idx >= steps.length) {
+        modal.classList.add('hidden');
+        modal.classList.remove('flex');
+        if (typeof onDone === 'function') onDone();
+        return;
+      }
+      numEl.innerText = steps[idx];
+      numEl.classList.remove('countdown-pop');
+      void numEl.offsetWidth;
+      numEl.classList.add('countdown-pop');
+      playTone(idx === steps.length - 1 ? 'go' : 'countdown');
+      idx++;
+      setTimeout(tickStep, idx === steps.length ? 650 : 720);
+    };
+    tickStep();
+  }
+
+  // ===== استيراد بنك أسئلة خارجي (PDF / JSON / CSV / TXT) =====
+  function updateBankStatusLabel(customName) {
+    const el = document.getElementById('bank-status-pill');
+    const resetBtn = document.getElementById('reset-bank-btn');
+    if (!el) return;
+    if (customName) {
+      el.innerText = `بنك مخصص: ${customName} (${COMPETITION_QUESTIONS.length} سؤال)`;
+      el.className = 'text-[11px] font-black text-emerald-300';
+      if (resetBtn) resetBtn.classList.remove('hidden');
+    } else {
+      el.innerText = `بنك الأسئلة الحالي: الافتراضي (${COMPETITION_QUESTIONS.length} سؤال صيدلة)`;
+      el.className = 'text-[11px] font-bold text-slate-400';
+      if (resetBtn) resetBtn.classList.add('hidden');
+    }
+  }
+
+  function resetDefaultQuestionBank() {
+    COMPETITION_QUESTIONS = DEFAULT_QUESTIONS.map(q => ({ ...q }));
+    updateBankStatusLabel(null);
+    showToast('تمت استعادة بنك الأسئلة الافتراضي (35 سؤالاً)', 'info');
+  }
+
+  function assignStagesToBank(list) {
+    const n = list.length;
+    const s1End = Math.max(1, Math.floor(n * 0.3));
+    const s2End = Math.max(s1End + 1, Math.floor(n * 0.6));
+    return list.map((item, i) => ({
+      num: i + 1,
+      stage: item.stage ? Number(item.stage) : (i < s1End ? 1 : (i < s2End ? 2 : 3)),
+      q: item.q,
+      opts: item.opts.slice(0, 4),
+      ans: (typeof item.ans === 'number' && item.ans >= 0 && item.ans <= 3) ? item.ans : 0,
+      exp: item.exp || ''
+    }));
+  }
+
+  function parseCSVLine(line) {
+    const res = [];
+    let cur = '';
+    let inQuotes = false;
+    for (let i = 0; i < line.length; i++) {
+      const ch = line[i];
+      if (ch === '"') {
+        if (inQuotes && line[i + 1] === '"') { cur += '"'; i++; }
+        else inQuotes = !inQuotes;
+      } else if (ch === ',' && !inQuotes) {
+        res.push(cur.trim());
+        cur = '';
+      } else {
+        cur += ch;
+      }
+    }
+    res.push(cur.trim());
+    return res;
+  }
+
+  function parseTextMCQs(rawText) {
+    const clean = rawText.replace(/\r/g, '\n').replace(/[ \t]+/g, ' ');
+    const blocks = clean.split(/(?=(?:^|\n)\s*(?:Q\s*\d+|\d+)\s*[\.\)\-:])/i).filter(b => b.trim().length > 12);
+    const parsed = [];
+    const letterMap = { a: 0, b: 1, c: 2, d: 3, 'أ': 0, 'ا': 0, 'ب': 1, 'ج': 2, 'د': 3 };
+
+    for (const block of blocks) {
+      const lines = block.split('\n').map(l => l.trim()).filter(Boolean);
+      if (lines.length < 3) continue;
+      let qLines = [];
+      let opts = [];
+      let ans = 0;
+      let exp = '';
+
+      for (const line of lines) {
+        const optMatch = line.match(/^(?:[A-Da-dأبجد])\s*[\.\)\-:]\s*(.+)$/);
+        const ansMatch = line.match(/^(?:Answer|Ans|Correct|الإجابة|الاجابة)\s*[:\-]?\s*([A-Da-dأبجد1-4])/i);
+        const expMatch = line.match(/^(?:Explanation|Exp|Note|التفسير|الشرح)\s*[:\-]?\s*(.+)$/i);
+        if (ansMatch) {
+          const val = ansMatch[1].toLowerCase();
+          if (letterMap[val] !== undefined) ans = letterMap[val];
+          else if (/^[1-4]$/.test(val)) ans = parseInt(val, 10) - 1;
+        } else if (expMatch) {
+          exp = expMatch[1].trim();
+        } else if (optMatch && opts.length < 4) {
+          opts.push(optMatch[1].trim());
+        } else if (opts.length === 0) {
+          qLines.push(line);
+        }
+      }
+      if (qLines.length > 0 && opts.length >= 2) {
+        while (opts.length < 4) opts.push('—');
+        parsed.push({ q: qLines.join(' '), opts, ans, exp });
+      }
+    }
+    return parsed;
+  }
+
+  async function handleBankFileImport(event) {
+    const file = event.target.files && event.target.files[0];
+    if (!file) return;
+    const ext = file.name.split('.').pop().toLowerCase();
+    try {
+      let imported = [];
+      if (ext === 'json') {
+        const txt = await file.text();
+        const data = JSON.parse(txt);
+        const arr = Array.isArray(data) ? data : (data.questions || []);
+        imported = arr.filter(x => x && x.q && Array.isArray(x.opts) && x.opts.length >= 2);
+      } else if (ext === 'csv') {
+        const txt = await file.text();
+        const lines = txt.split(/\r?\n/).filter(l => l.trim());
+        const startIdx = /question|السؤال|opt/i.test(lines[0]) ? 1 : 0;
+        const lMap = { a: 0, b: 1, c: 2, d: 3 };
+        for (let i = startIdx; i < lines.length; i++) {
+          const cols = parseCSVLine(lines[i]);
+          if (cols.length >= 6 && cols[0]) {
+            const rawAns = (cols[5] || '0').trim().toLowerCase();
+            const ansIdx = lMap[rawAns] !== undefined ? lMap[rawAns] : Math.max(0, Math.min(3, parseInt(rawAns, 10) || 0));
+            imported.push({
+              q: cols[0],
+              opts: [cols[1], cols[2], cols[3], cols[4]],
+              ans: ansIdx,
+              exp: cols[6] || ''
+            });
+          }
+        }
+      } else if (ext === 'pdf') {
+        if (typeof pdfjsLib === 'undefined') {
+          showToast('مكتبة قراءة الـ PDF غير متوفرة حالياً — استخدم JSON أو CSV', 'error');
+          return;
+        }
+        showToast('جاري استخراج الأسئلة من ملف الـ PDF...', 'info');
+        pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+        const buf = await file.arrayBuffer();
+        const pdf = await pdfjsLib.getDocument({ data: buf }).promise;
+        let fullText = '';
+        for (let p = 1; p <= pdf.numPages; p++) {
+          const page = await pdf.getPage(p);
+          const content = await page.getTextContent();
+          const pageLines = content.items.map(it => it.str + (it.hasEOL ? '\n' : ' ')).join('');
+          fullText += pageLines + '\n';
+        }
+        imported = parseTextMCQs(fullText);
+      } else {
+        const txt = await file.text();
+        imported = parseTextMCQs(txt);
+      }
+
+      if (!imported.length) {
+        showToast('لم يتم العثور على أسئلة صالحة — تأكد من تنسيق Q1. ثم A) B) C) D)', 'error');
+        event.target.value = '';
+        return;
+      }
+
+      COMPETITION_QUESTIONS = assignStagesToBank(imported);
+      updateBankStatusLabel(file.name);
+      showToast(`تم تحميل ${COMPETITION_QUESTIONS.length} سؤالاً بنجاح من ${file.name}!`, 'success');
+    } catch (e) {
+      showToast('تعذر قراءة الملف — تأكد من سلامة تنسيقه', 'error');
+    }
+    event.target.value = '';
+  }
+
+  // ===== السؤال الفاصل عند التعادل (Golden Question) =====
+  function startTieBreaker() {
+    const qObj = TIE_BREAKER_QUESTIONS[tieBreakerIdx % TIE_BREAKER_QUESTIONS.length];
+    tieBreakerIdx++;
+
+    document.getElementById('winner-modal').classList.add('hidden');
+    document.getElementById('winner-modal').classList.remove('flex');
+
+    roomState.matchEnded = false;
+    roomState.winnerTeam = null;
+    roomState.isTieBreaker = true;
+    roomState.stage = 'tiebreaker';
+    roomState.currentQ = qObj;
+    roomState.buzzerOpen = true;
+    roomState.buzzedTeam = null;
+    roomState.lockedTeams = [];
+    roomState.wrongOptions = [];
+    roomState.eliminatedOptions = [];
+    roomState.revealed = false;
+    roomState.selectedOpt = null;
+    roomState.statusMessage = '⚡ السؤال الفاصل (Golden Question) — الأسرع والأدق يفوز بالكأس!';
+    roomState.timerPaused = false;
+    roomState.timer = 15;
+
+    runPreShowCountdown('⚡ السؤال الفاصل (Golden Question)', () => {
+      setArenaState('finale');
+      startTimer();
+      broadcastState();
+      renderUI();
+    });
+  }
+
+  // ===== بطاقة توثيق النتيجة (Download HD PNG Result Card) =====
+  function loadLogoImage(src) {
+    return new Promise((resolve) => {
+      const existing = Array.from(document.querySelectorAll('img')).find(
+        el => el.getAttribute('src') === src && el.complete && el.naturalWidth > 0
+      );
+      if (existing) return resolve(existing);
+      const img = new Image();
+      if (/^https?:/i.test(window.location.href)) img.crossOrigin = 'anonymous';
+      img.onload = () => resolve(img);
+      img.onerror = () => resolve(null);
+      img.src = src;
+    });
+  }
+
+  async function downloadResultCard() {
+    try {
+      const logos = await Promise.all([
+        loadLogoImage('mnu-logo.jpg'),
+        loadLogoImage('pharmacy-logo.jpg'),
+        loadLogoImage('pharma-dept-logo.jpg')
+      ]);
+
+      const renderCard = (withLogos) => {
+        const canvas = document.createElement('canvas');
+        canvas.width = 1200;
+        canvas.height = 760;
+        const ctx = canvas.getContext('2d');
+
+        // خلفية ملكية متدرجة
+        const bg = ctx.createRadialGradient(600, 280, 40, 600, 380, 760);
+        bg.addColorStop(0, '#0f204a');
+        bg.addColorStop(0.6, '#050b1c');
+        bg.addColorStop(1, '#02050e');
+        ctx.fillStyle = bg;
+        ctx.fillRect(0, 0, 1200, 760);
+
+        // إطار ذهبي مزدوج
+        ctx.strokeStyle = '#f59e0b';
+        ctx.lineWidth = 6;
+        ctx.strokeRect(24, 24, 1152, 712);
+        ctx.strokeStyle = 'rgba(253, 224, 71, 0.35)';
+        ctx.lineWidth = 2;
+        ctx.strokeRect(38, 38, 1124, 684);
+
+        // رسم الشعارات الثلاثة داخل حلقات ذهبية في الأعلى
+        if (withLogos) {
+          const logoPositions = [505, 600, 695];
+          const r = 34;
+          logoPositions.forEach((cx, idx) => {
+            const img = logos[idx];
+            if (!img) return;
+            const cy = 86;
+            ctx.save();
+            ctx.beginPath();
+            ctx.arc(cx, cy, r + 3, 0, Math.PI * 2);
+            const ringGrad = ctx.createLinearGradient(cx - r, cy - r, cx + r, cy + r);
+            ringGrad.addColorStop(0, '#fef08a');
+            ringGrad.addColorStop(0.5, '#f59e0b');
+            ringGrad.addColorStop(1, '#92400e');
+            ctx.fillStyle = ringGrad;
+            ctx.fill();
+
+            ctx.beginPath();
+            ctx.arc(cx, cy, r, 0, Math.PI * 2);
+            ctx.clip();
+            ctx.fillStyle = '#050b1a';
+            ctx.fillRect(cx - r, cy - r, r * 2, r * 2);
+            ctx.drawImage(img, cx - r, cy - r, r * 2, r * 2);
+            ctx.restore();
+          });
+        }
+
+        ctx.direction = 'rtl';
+        ctx.textAlign = 'center';
+
+        // ترويسة الجامعة والكلية
+        ctx.fillStyle = '#fcd34d';
+        ctx.font = '800 22px Cairo, Tajawal, sans-serif';
+        ctx.fillText('جامعة المنصورة الأهلية • كلية الصيدلة • قسم الأدوية والسموم', 600, 152);
+
+        // عنوان المسابقة
+        const goldGrad = ctx.createLinearGradient(350, 170, 850, 235);
+        goldGrad.addColorStop(0, '#fde047');
+        goldGrad.addColorStop(0.5, '#fef9c3');
+        goldGrad.addColorStop(1, '#f59e0b');
+        ctx.fillStyle = goldGrad;
+        ctx.font = '900 54px Cairo, Tajawal, sans-serif';
+        ctx.fillText('🏆 مسابقة العباقرة 🏆', 600, 218);
+
+        // إعلان الفائز
+        const winText = roomState.team1Score > roomState.team2Score
+          ? `الفائز بالمسابقة: ${roomState.team1Name}`
+          : (roomState.team2Score > roomState.team1Score
+            ? `الفائز بالمسابقة: ${roomState.team2Name}`
+            : 'تعادل بطولي بين الفريقين');
+        ctx.fillStyle = '#ffffff';
+        ctx.font = '900 34px Cairo, Tajawal, sans-serif';
+        ctx.fillText(winText, 600, 276);
+
+        // دالة مساعدة لتقسيم أسماء أعضاء التيم لو طويلة
+        const wrapLine = (text, maxWidth) => {
+          if (!text) return [];
+          const words = text.split(' ');
+          const lines = [];
+          let cur = '';
+          for (const w of words) {
+            const test = cur ? cur + ' ' + w : w;
+            if (ctx.measureText(test).width > maxWidth && cur) {
+              lines.push(cur);
+              cur = w;
+            } else {
+              cur = test;
+            }
+          }
+          if (cur) lines.push(cur);
+          return lines.slice(0, 2);
+        };
+
+        // بطاقتا الفريقين مع أسماء الفرق وأعضاء التيم
+        const drawTeamBox = (x, name, members, score, correct, borderCol, titleCol) => {
+          ctx.fillStyle = 'rgba(9, 17, 38, 0.92)';
+          ctx.strokeStyle = borderCol;
+          ctx.lineWidth = 3;
+          ctx.beginPath();
+          ctx.roundRect(x, 308, 450, 245, 22);
+          ctx.fill();
+          ctx.stroke();
+
+          ctx.fillStyle = titleCol;
+          ctx.font = '900 30px Cairo, Tajawal, sans-serif';
+          ctx.fillText(name, x + 225, 354);
+
+          ctx.fillStyle = '#fde047';
+          ctx.font = '900 66px Cairo, Tajawal, sans-serif';
+          ctx.fillText(`${score}`, x + 225, 424);
+
+          ctx.fillStyle = '#cbd5e1';
+          ctx.font = '700 18px Cairo, Tajawal, sans-serif';
+          ctx.fillText(`إجابات صحيحة: ${correct}`, x + 225, 458);
+
+          if (members && members.length) {
+            ctx.fillStyle = '#fef08a';
+            ctx.font = '700 17px Cairo, Tajawal, sans-serif';
+            const memLines = wrapLine(members.join(' • '), 400);
+            memLines.forEach((ln, idx) => {
+              ctx.fillText(ln, x + 225, 492 + idx * 24);
+            });
+          }
+        };
+
+        drawTeamBox(645, roomState.team1Name, roomState.team1Members || [], roomState.team1Score, roomState.team1Correct, '#f43f5e', '#fda4af');
+        drawTeamBox(105, roomState.team2Name, roomState.team2Members || [], roomState.team2Score, roomState.team2Correct, '#3b82f6', '#93c5fd');
+
+        // فاصل VS
+        ctx.fillStyle = '#f59e0b';
+        ctx.font = '900 32px Montserrat, sans-serif';
+        ctx.fillText('VS', 600, 434);
+
+        // تحت إشراف
+        ctx.fillStyle = '#fde047';
+        ctx.font = '800 20px Cairo, Tajawal, sans-serif';
+        ctx.fillText('تحت إشراف', 600, 608);
+
+        ctx.fillStyle = '#f8fafc';
+        ctx.font = '800 24px Cairo, Tajawal, sans-serif';
+        ctx.fillText('أ.د/ مريهان مقلد  |  أ.م.د/ مروة زغلول  |  م.م/ هبة بهريز', 600, 646);
+
+        // التاريخ
+        const dateStr = new Date().toLocaleDateString('ar-EG', { year: 'numeric', month: 'long', day: 'numeric' });
+        ctx.fillStyle = '#94a3b8';
+        ctx.font = '700 18px Cairo, Tajawal, sans-serif';
+        ctx.fillText(dateStr, 600, 692);
+
+        return canvas.toDataURL('image/png');
+      };
+
+      let dataUrl;
+      try {
+        dataUrl = renderCard(true);
+      } catch (secErr) {
+        dataUrl = renderCard(false);
+      }
+
+      const link = document.createElement('a');
+      link.download = 'abakera-result-card.png';
+      link.href = dataUrl;
+      link.click();
+      showToast('تم تحميل بطاقة توثيق النتيجة بالشعارات وأسماء الفرق!', 'success');
+    } catch (e) {
+      showToast('تعذر إنشاء بطاقة النتيجة', 'error');
+    }
+  }
+
+  function vibrateDevice(pattern) {
+    if (navigator.vibrate) {
+      try { navigator.vibrate(pattern); } catch (e) {}
+    }
+  }
+
+  function toggleMute() {
+    isMuted = !isMuted;
+    try { localStorage.setItem('abakera_muted', isMuted ? '1' : '0'); } catch (e) {}
+    const btn = document.getElementById('mute-btn');
+    if (btn) btn.innerText = isMuted ? 'الصوت: مكتوم' : 'الصوت: مفعل';
+  }
+
+  function toggleFullscreen() {
+    try {
+      if (!document.fullscreenElement) {
+        document.documentElement.requestFullscreen();
+      } else {
+        document.exitFullscreen();
+      }
+    } catch (e) {
+      showToast('ملء الشاشة غير مدعوم في هذا الوضع', 'info');
+    }
+  }
+
+  function toggleShortcutsModal(show) {
+    const m = document.getElementById('shortcuts-modal');
+    if (!m) return;
+    m.classList.toggle('hidden', !show);
+    m.classList.toggle('flex', show);
+  }
+
+  function getJoinUrl() {
+    const baseUrl = window.location.href.split('?')[0];
+    return `${baseUrl}?room=${roomId}`;
+  }
+
+  function copyRoomLink() {
+    if (!roomId) {
+      showToast('أنت في الوضع المحلي ولا يوجد رابط غرفة نشط', 'info');
+      return;
+    }
+    const url = getJoinUrl();
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(url).then(() => {
+        showToast('تم نسخ رابط الانضمام للمسابقة', 'success');
+      }).catch(() => fallbackCopyText(url));
+    } else {
+      fallbackCopyText(url);
+    }
+  }
+
+  function fallbackCopyText(text) {
+    try {
+      const ta = document.createElement('textarea');
+      ta.value = text;
+      ta.style.position = 'fixed';
+      ta.style.opacity = '0';
+      document.body.appendChild(ta);
+      ta.select();
+      document.execCommand('copy');
+      ta.remove();
+      showToast('تم نسخ رابط الانضمام للمسابقة', 'success');
+    } catch (e) {
+      showToast('تعذر النسخ التلقائي', 'error');
+    }
+  }
+
+  function getActiveStage(qIndex) {
+    if (roomState.isTieBreaker) return 'tiebreaker';
+    const q = (qIndex >= 0 && qIndex < COMPETITION_QUESTIONS.length) ? COMPETITION_QUESTIONS[qIndex] : roomState.currentQ;
+    if (q && q.stage) return q.stage;
+    if (qIndex >= 20) return 3;
+    if (qIndex >= 10) return 2;
+    return 1;
+  }
+
+  function getQuestionTime(qIndex) {
+    const st = getActiveStage(qIndex);
+    return (st === 3 || st === 'tiebreaker') ? 15 : 20;
+  }
+
+  function getBuzzAnswerTime(qIndex) {
+    const st = getActiveStage(qIndex);
+    return (st === 3 || st === 'tiebreaker') ? 10 : 15;
+  }
+
+  function getQuestionPoints(qIndex) {
+    const st = getActiveStage(qIndex);
+    return (st === 2 || st === 3 || st === 'tiebreaker') ? 20 : 10;
+  }
+
+  function broadcastState() {
+    if (myRole !== 'host') return;
+    saveMatchState();
+    if (isLocalMode) return;
+    ['team1', 'team2'].forEach(t => {
+      if (teamConns[t] && teamConns[t].open) {
+        try {
+          teamConns[t].send({ type: 'STATE_UPDATE', state: roomState });
+        } catch (e) {}
+      }
+    });
+  }
+
+  // إرسال خفيف جداً لتحديث الثواني فقط بدون إعادة بناء أزرار الموبايل
+  function broadcastTimerTick() {
+    if (myRole !== 'host' || isLocalMode) return;
+    const payload = { type: 'TIMER_TICK', timer: roomState.timer, timerPaused: roomState.timerPaused };
+    ['team1', 'team2'].forEach(t => {
+      if (teamConns[t] && teamConns[t].open) {
+        try {
+          teamConns[t].send(payload);
+        } catch (e) {}
+      }
+    });
+  }
+
+  let prewarmedReady = false;
+  let pendingJoinPayload = null;
+
+  function setupHostConnListeners(conn) {
+    conn.on('open', () => {
+      prewarmedReady = true;
+      reconnectAttempts = 0;
+      clearTimeout(autoReconnectTimer);
+      document.getElementById('mobile-disconnect-banner')?.classList.add('hidden');
+      const st = document.getElementById('connection-status');
+      if (st && myRole === '') st.innerText = '⚡ متصل بالغرفة — جاهز للدخول الفوري';
+
+      if (pendingJoinPayload) {
+        conn.send(pendingJoinPayload);
+        pendingJoinPayload = null;
+      } else if (myRole === 'team1' || myRole === 'team2') {
+        conn.send({ type: 'JOIN_AUTO', teamName: savedTeamName, teamMembers: savedTeamMembers, preferredRole: myRole });
+      } else {
+        conn.send({ type: 'PROBE' });
+      }
+
+      requestScreenWakeLock();
+      clearInterval(heartbeatInterval);
+      heartbeatInterval = setInterval(() => {
+        if (hostConn && hostConn.open) {
+          try { hostConn.send({ type: 'PING' }); } catch (e) {}
+        }
+      }, 5000);
+    });
+
+    conn.on('data', (data) => {
+      if (data.type === 'PROBE_RESULT') {
+        if (data.team1Connected && data.team2Connected && myRole === '') {
+          const btn = document.getElementById('join-auto-team-btn');
+          const inp = document.getElementById('custom-team-name-input');
+          if (inp) inp.disabled = true;
+          if (btn) {
+            btn.disabled = true;
+            btn.innerText = 'اكتمل عدد الفرق في هذه المباراة';
+            btn.className = 'w-full py-4 rounded-2xl bg-slate-900 border border-slate-800 text-slate-500 font-black text-base cursor-not-allowed';
+          }
+        }
+      } else if (data.type === 'ROOM_FULL') {
+        showToast('اكتمل عدد الفرق في هذه المباراة بالفعل', 'error');
+        const joinBtn = document.getElementById('join-auto-team-btn');
+        if (joinBtn) joinBtn.disabled = false;
+      } else if (data.type === 'ASSIGNED_ROLE') {
+        myRole = data.role;
+        roomState = data.state;
+        document.getElementById('lobby-screen').classList.add('hidden');
+        document.getElementById('team-screen').classList.remove('hidden');
+        document.getElementById('mobile-disconnect-banner').classList.add('hidden');
+
+        const btn = document.getElementById('team-buzzer-btn');
+        const aura = document.getElementById('buzzer-aura');
+        if (myRole === 'team2') {
+          btn.className = "buzzer-dome buzzer-dome-team2";
+          aura.className = "buzzer-glow-aura bg-blue-500";
+        } else {
+          btn.className = "buzzer-dome buzzer-dome-team1";
+          aura.className = "buzzer-glow-aura bg-rose-500";
+        }
+        renderUI();
+      } else if (data.type === 'SESSION_REPLACED') {
+        showToast('انتهت هذه الجولة — شكراً لمشاركتكم!', 'info');
+        setTimeout(() => {
+          window.location.href = window.location.href.split('?')[0];
+        }, 1500);
+      } else if (data.type === 'TIMER_TICK') {
+        roomState.timer = data.timer;
+        roomState.timerPaused = data.timerPaused;
+        const timerPill = document.getElementById('team-timer-pill');
+        if (timerPill && roomState.gameStarted && !roomState.revealed && !roomState.showTransition && !roomState.showPressureTransition) {
+          timerPill.classList.remove('hidden');
+          timerPill.innerText = roomState.timerPaused ? `⏸ ${roomState.timer} ث` : `⏱ ${roomState.timer} ث`;
+        }
+        if (roomState.buzzedTeam === myRole && !roomState.revealed) {
+          const statusText = document.getElementById('team-status-text');
+          if (statusText) statusText.innerText = `⚡ اختر الإجابة الآن (${roomState.timer} ثانية):`;
+        }
+      } else if (data.type === 'FRIEND_TICK') {
+        roomState.friendCallTimer = data.friendCallTimer;
+        if (roomState.buzzedTeam === myRole && roomState.friendCallActive) {
+          const statusText = document.getElementById('team-status-text');
+          if (statusText) statusText.innerText = `📞 الاستعانة بصديق (${roomState.friendCallTimer} ثانية)...`;
+        }
+      } else if (data.type === 'STATE_UPDATE') {
+        roomState = data.state;
+        renderUI();
+      }
+    });
+
+    conn.on('close', () => {
+      prewarmedReady = false;
+      clearInterval(heartbeatInterval);
+      if (myRole === 'team1' || myRole === 'team2') {
+        document.getElementById('mobile-disconnect-banner').classList.remove('hidden');
+        if (reconnectAttempts < 8 && !roomState.sessionClosed) {
+          reconnectAttempts++;
+          showToast(`انقطع الاتصال — محاولة إعادة اتصال تلقائي (${reconnectAttempts})...`, 'info');
+          clearTimeout(autoReconnectTimer);
+          autoReconnectTimer = setTimeout(() => connectTeamPeer(myRole), 2000);
+        } else {
+          showToast('انقطع الاتصال بالهوست — اضغط إعادة الاتصال', 'error');
+        }
+      }
+    });
+
+    conn.on('error', () => {
+      prewarmedReady = false;
+      const joinBtn = document.getElementById('join-auto-team-btn');
+      if (joinBtn) joinBtn.disabled = false;
+    });
+  }
+
+  function prewarmMobileConnection(targetRoomId) {
+    if (!targetRoomId || typeof Peer === 'undefined') return;
+    if (peer) { try { peer.destroy(); } catch (e) {} }
+    prewarmedReady = false;
+    peer = new Peer(undefined, PEER_CONFIG);
+    peer.on('open', () => {
+      hostConn = peer.connect('mnu-abakera-' + targetRoomId, { reliable: true });
+      setupHostConnListeners(hostConn);
+    });
+    peer.on('error', () => {
+      prewarmedReady = false;
+    });
+  }
+
+  const PEER_CONFIG = {
+    debug: 0,
+    config: {
+      iceServers: [
+        { urls: 'stun:stun.l.google.com:19302' },
+        { urls: 'stun:stun1.l.google.com:19302' },
+        { urls: 'stun:stun2.l.google.com:19302' }
+      ]
+    }
+  };
+
+  function resetHostCreateButton() {
+    const btn = document.getElementById('create-host-btn');
+    if (btn) {
+      btn.disabled = false;
+      btn.innerHTML = '<svg class="w-7 h-7" fill="url(#gold3d)" viewBox="0 0 24 24"><path d="M21 3H3c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h5v2h8v-2h5c1.1 0 1.99-.9 1.99-2L23 5c0-1.1-.9-2-2-2zm0 14H3V5h18v12z"/></svg><span class="gold-shimmer-text">Host (موبايلات + QR)</span>';
+    }
+  }
+
+  let hostOpenTimeout = null;
+
+  function initHostPeerServer() {
+    isLocalMode = false;
+    clearTimeout(hostOpenTimeout);
+    if (typeof Peer === 'undefined') {
+      resetHostCreateButton();
+      showToast('مكتبة الاتصال غير متاحة — استخدم وضع القاعة المحلي', 'error');
+      return;
+    }
+    if (peer) { try { peer.destroy(); } catch (e) {} }
+    roomId = Math.random().toString(36).substring(2, 10);
+    const peerId = 'mnu-abakera-' + roomId;
+
+    try {
+      peer = new Peer(peerId, PEER_CONFIG);
+    } catch (e) {
+      resetHostCreateButton();
+      showToast('تعذر بدء الاتصال — استخدم وضع القاعة المحلي', 'error');
+      return;
+    }
+
+    let opened = false;
+    hostOpenTimeout = setTimeout(() => {
+      if (!opened) {
+        try { if (peer) peer.destroy(); } catch (e) {}
+        resetHostCreateButton();
+        showToast('انتهت مهلة الاتصال بسيرفر الغرف — تأكد من الإنترنت أو شغّل وضع القاعة المحلي', 'error');
+      }
+    }, 7000);
+
+    peer.on('open', () => {
+      opened = true;
+      clearTimeout(hostOpenTimeout);
+      resetHostCreateButton();
+      myRole = 'host';
+      document.getElementById('lobby-screen').classList.add('hidden');
+      document.getElementById('host-waiting-screen').classList.remove('hidden');
+      document.getElementById('host-game-screen').classList.add('hidden');
+
+      generateRoomQR(roomId);
+      renderUI();
+    });
+
+    peer.on('connection', (conn) => {
+      conn.on('data', (data) => {
+        if (data.type === 'PROBE') {
+          conn.send({
+            type: 'PROBE_RESULT',
+            team1Connected: roomState.team1Connected,
+            team2Connected: roomState.team2Connected
+          });
+        } else if (data.type === 'JOIN_AUTO') {
+          let assignedSlot = null;
+          // دعم إعادة اتصال فريق سابق بنفس الاسم
+          const incomingName = (data.teamName && data.teamName.trim()) ? data.teamName.trim() : '';
+          if (data.preferredRole === 'team1' && !roomState.team1Connected) {
+            assignedSlot = 'team1';
+          } else if (data.preferredRole === 'team2' && !roomState.team2Connected) {
+            assignedSlot = 'team2';
+          } else if (!roomState.team1Connected) {
+            assignedSlot = 'team1';
+          } else if (!roomState.team2Connected) {
+            assignedSlot = 'team2';
+          } else {
+            conn.send({ type: 'ROOM_FULL' });
+            return;
+          }
+
+          const incomingMembers = Array.isArray(data.teamMembers) ? data.teamMembers.filter(Boolean) : [];
+          if (assignedSlot === 'team1') {
+            roomState.team1Connected = true;
+            roomState.team1Name = incomingName || roomState.team1Name || 'الفريق الأول';
+            if (incomingMembers.length || !roomState.team1Members.length) roomState.team1Members = incomingMembers;
+            document.getElementById('team1-name-input').value = roomState.team1Name;
+          } else {
+            roomState.team2Connected = true;
+            roomState.team2Name = incomingName || roomState.team2Name || 'الفريق الثاني';
+            if (incomingMembers.length || !roomState.team2Members.length) roomState.team2Members = incomingMembers;
+            document.getElementById('team2-name-input').value = roomState.team2Name;
+          }
+
+          teamConns[assignedSlot] = conn;
+          conn.send({ type: 'ASSIGNED_ROLE', role: assignedSlot, state: roomState });
+
+          if (roomState.team1Connected && roomState.team2Connected) {
+            playTone('win');
+            fireCelebrationConfetti();
+          } else {
+            playTone('next');
+          }
+
+          broadcastState();
+          renderUI();
+        } else if (data.type === 'BUZZ') {
+          triggerTeamBuzz(data.team);
+        } else if (data.type === 'ANSWER') {
+          handleAnswerSubmission(data.optIdx, data.team);
+        } else if (data.type === 'LIFELINE') {
+          useLifeline(data.team, data.kind);
+        } else if (data.type === 'PING') {
+          try { conn.send({ type: 'PONG' }); } catch (e) {}
+        }
+      });
+
+      conn.on('close', () => {
+        ['team1', 'team2'].forEach(t => {
+          if (teamConns[t] === conn) {
+            teamConns[t] = null;
+            roomState[t + 'Connected'] = false;
+            showToast(`انقطع اتصال ${t === 'team1' ? roomState.team1Name : roomState.team2Name}`, 'error');
+            broadcastState();
+            renderUI();
+          }
+        });
+      });
+    });
+
+    peer.on('error', (err) => {
+      clearTimeout(hostOpenTimeout);
+      resetHostCreateButton();
+      const errType = (err && err.type) ? ` (${err.type})` : '';
+      showToast(`تعذر الاتصال بسيرفر الغرف${errType} — جرب مرة أخرى أو استخدم الوضع المحلي`, 'error');
+    });
+  }
+
+  function createHostRoom() {
+    ensureAudioReady();
+    const btn = document.getElementById('create-host-btn');
+    btn.innerText = 'جاري إنشاء الغرفة...';
+    btn.disabled = true;
+    initHostPeerServer();
+  }
+
+  // وضع القاعة المحلي (للعرض المباشر أو الاحتياطي لو الشبكة فصلت)
+  function startLocalStudioMode() {
+    ensureAudioReady();
+    isLocalMode = true;
+    myRole = 'host';
+    roomState = createFreshState();
+    roomState.team1Connected = true;
+    roomState.team2Connected = true;
+    roomState.gameStarted = true;
+
+    document.getElementById('team1-name-input').value = roomState.team1Name;
+    document.getElementById('team2-name-input').value = roomState.team2Name;
+    document.getElementById('lobby-screen').classList.add('hidden');
+    document.getElementById('host-waiting-screen').classList.add('hidden');
+    document.getElementById('host-game-screen').classList.remove('hidden');
+
+    showToast('تم تشغيل وضع القاعة المحلي — استخدم أزرار الجرس أو مفاتيح 1 و 2', 'success');
+    showParagraphIntroModal(1, "الفقرة الأولى", () => {
+      runPreShowCountdown('الفقرة الأولى • 10 نقاط لكل سؤال', () => nextQuestion());
+    });
+  }
+
+  function generateRoomQR(id) {
+    if (typeof QRCode === 'undefined') return;
+    const joinUrl = getJoinUrl();
+    if (/^(about:|blob:|file:)/i.test(window.location.href)) {
+      showToast('ملاحظة: لتشغيل QR على الموبايلات، ارفع الملف على رابط HTTPS (مثل GitHub Pages)', 'info');
+    }
+
+    const modalContainer = document.getElementById('qrcode-container');
+    modalContainer.innerHTML = '';
+    new QRCode(modalContainer, {
+      text: joinUrl,
+      width: 200,
+      height: 200,
+      colorDark: "#000000",
+      colorLight: "#ffffff"
+    });
+
+    const mainContainer = document.getElementById('main-qrcode-container');
+    mainContainer.innerHTML = '';
+    new QRCode(mainContainer, {
+      text: joinUrl,
+      width: 190,
+      height: 190,
+      colorDark: "#000000",
+      colorLight: "#ffffff"
+    });
+  }
+
+  function connectTeamPeer(preferredRole = null) {
+    if (typeof Peer === 'undefined') {
+      showToast('تعذر تحميل مكتبة الاتصال', 'error');
+      return;
+    }
+    const payload = {
+      type: 'JOIN_AUTO',
+      teamName: savedTeamName,
+      teamMembers: savedTeamMembers,
+      preferredRole: preferredRole
+    };
+
+    // لو الاتصال المسبق جاهز ومفتوح، ادخل في 0 مللي ثانية!
+    if (hostConn && hostConn.open) {
+      hostConn.send(payload);
+      return;
+    }
+
+    pendingJoinPayload = payload;
+    if (peer && !peer.destroyed && peer.open) {
+      hostConn = peer.connect('mnu-abakera-' + roomId, { reliable: true });
+      setupHostConnListeners(hostConn);
+      return;
+    }
+
+    if (peer) { try { peer.destroy(); } catch (e) {} }
+    peer = new Peer(undefined, PEER_CONFIG);
+    peer.on('open', () => {
+      hostConn = peer.connect('mnu-abakera-' + roomId, { reliable: true });
+      setupHostConnListeners(hostConn);
+    });
+    peer.on('error', () => {
+      const joinBtn = document.getElementById('join-auto-team-btn');
+      if (joinBtn) joinBtn.disabled = false;
+      showToast('خطأ في الشبكة — تأكد من الاتصال بالإنترنت', 'error');
+    });
+  }
+
+  function goToTeamMembersStep() {
+    const enteredName = document.getElementById('custom-team-name-input').value.trim();
+    if (!enteredName) {
+      showToast('يرجى كتابة اسم فريقك أولاً', 'error');
+      document.getElementById('custom-team-name-input').focus();
+      return;
+    }
+    savedTeamName = enteredName;
+    document.getElementById('preview-team-name').innerText = enteredName;
+    document.getElementById('team-step-1').classList.add('hidden');
+    document.getElementById('team-step-2').classList.remove('hidden');
+    setTimeout(() => document.getElementById('member-name-input')?.focus(), 80);
+  }
+
+  function backToTeamNameStep() {
+    document.getElementById('team-step-2').classList.add('hidden');
+    document.getElementById('team-step-1').classList.remove('hidden');
+  }
+
+  function renderMemberChips() {
+    const box = document.getElementById('members-chips-list');
+    if (!box) return;
+    if (!savedTeamMembers.length) {
+      box.innerHTML = '<span class="text-xs text-slate-500 font-bold my-auto">يمكنك إضافة أي عدد من الأسماء أو الدخول مباشرة</span>';
+      return;
+    }
+    box.innerHTML = savedTeamMembers.map((name, idx) => `
+      <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-500/20 border border-amber-400/50 text-amber-100 text-xs font-black">
+        <span>${name}</span>
+        <button onclick="removeTeamMember(${idx})" class="text-rose-300 hover:text-rose-200 font-black cursor-pointer">×</button>
+      </span>
+    `).join('');
+  }
+
+  function addTeamMember() {
+    const inp = document.getElementById('member-name-input');
+    if (!inp) return;
+    const val = inp.value.trim();
+    if (!val) return;
+    savedTeamMembers.push(val);
+    inp.value = '';
+    inp.focus();
+    renderMemberChips();
+  }
+
+  function removeTeamMember(idx) {
+    savedTeamMembers.splice(idx, 1);
+    renderMemberChips();
+  }
+
+  function pushUndoSnapshot() {
+    if (myRole !== 'host') return;
+    stateHistory.push(JSON.parse(JSON.stringify(roomState)));
+    if (stateHistory.length > 15) stateHistory.shift();
+  }
+
+  function undoLastAction() {
+    if (myRole !== 'host') return;
+    if (!stateHistory.length) {
+      showToast('لا توجد خطوات سابقة للتراجع عنها', 'info');
+      return;
+    }
+    clearInterval(timerInterval);
+    clearInterval(friendInterval);
+    roomState = stateHistory.pop();
+    roomState.friendCallActive = false;
+    document.getElementById('friend-call-modal')?.classList.add('hidden');
+    document.getElementById('team1-name-input').value = roomState.team1Name;
+    document.getElementById('team2-name-input').value = roomState.team2Name;
+    if (!roomState.revealed && !roomState.timerPaused && roomState.currentQ) {
+      startTimer();
+    }
+    broadcastState();
+    renderUI();
+    showToast('↩ تم التراجع عن آخر خطوة', 'info');
+  }
+
+  function joinCompetitionAuto() {
+    ensureAudioReady();
+    const enteredName = document.getElementById('custom-team-name-input').value.trim();
+
+    if (!enteredName) {
+      showToast('يرجى كتابة اسم فريقك أولاً', 'error');
+      document.getElementById('custom-team-name-input').focus();
+      return;
+    }
+
+    // لو كتب اسم عضو في الخانة ولم يضغط + إضافة، أضفه تلقائياً قبل الدخول
+    const pendingMember = document.getElementById('member-name-input')?.value.trim();
+    if (pendingMember) {
+      savedTeamMembers.push(pendingMember);
+      document.getElementById('member-name-input').value = '';
+      renderMemberChips();
+    }
+
+    savedTeamName = enteredName;
+    const joinBtn = document.getElementById('join-auto-team-btn');
+    joinBtn.disabled = true;
+    document.getElementById('connection-status').innerText = 'جاري تسجيل الفريق...';
+    connectTeamPeer();
+    setTimeout(() => {
+      if (myRole === '') {
+        joinBtn.disabled = false;
+        document.getElementById('connection-status').innerText = 'تأخر الاتصال — تأكد من الشبكة واضغط مرة أخرى';
+      }
+    }, 8000);
+  }
+
+  function reconnectToHost() {
+    showToast('جاري إعادة الاتصال...', 'info');
+    connectTeamPeer(myRole);
+  }
+
+  function startMatchFromWaiting() {
+    if (!roomState.team1Connected || !roomState.team2Connected) return;
+    roomState.gameStarted = true;
+    document.getElementById('host-waiting-screen').classList.add('hidden');
+    document.getElementById('host-game-screen').classList.remove('hidden');
+
+    showParagraphIntroModal(1, "الفقرة الأولى", () => {
+      runPreShowCountdown('الفقرة الأولى • 10 نقاط لكل سؤال', () => nextQuestion());
+    });
+  }
+
+  function showParagraphIntroModal(stageNum, titleText, callback) {
+    let modal = document.getElementById('paragraph-intro-modal');
+    if (!modal) {
+      modal = document.createElement('div');
+      modal.id = 'paragraph-intro-modal';
+      modal.className = 'fixed inset-0 z-50 flex glass-3d-backdrop items-center justify-center p-4';
+      document.body.appendChild(modal);
+    }
+
+    const ptsText = (stageNum === 2)
+      ? "المرحلة الثانية: مرحلة الضعف (×2 • 20 نقطة لكل سؤال)"
+      : (stageNum === 3 ? "الفقرة الثالثة: تحت الضغط (15 ث للسؤال • 10 ث بعد الجرس • 20 نقطة)" : "الفقرة الأولى: الأسئلة العادية (10 نقاط لكل سؤال)");
+
+    modal.innerHTML = `
+      <div class="royal-dark-card royal-crown-card winner-glow max-w-xl w-full rounded-3xl p-8 text-center my-auto animate-slide-up">
+        <div class="inline-block px-4 py-1 rounded-full bg-amber-500/20 border border-amber-400 text-amber-300 text-xs font-black mb-3">
+          إعلان الفقرة القادمة
+        </div>
+        <h2 class="text-3xl sm:text-5xl font-black gold-shimmer-text mb-3 leading-tight">
+          ${titleText}
+        </h2>
+        <p class="text-xl sm:text-2xl font-black text-white mb-6">
+          ${ptsText}
+        </p>
+        <button id="start-para-btn" class="dark-gold-btn px-10 py-4 rounded-2xl font-black text-lg cursor-pointer">
+          <span class="gold-shimmer-text">ابدأ الفقرة الآن ◀</span>
+        </button>
+      </div>
+    `;
+    modal.classList.remove('hidden');
+    modal.classList.add('flex');
+
+    document.getElementById('start-para-btn').onclick = () => {
+      modal.classList.add('hidden');
+      modal.classList.remove('flex');
+      if (typeof callback === 'function') callback();
+    };
+  }
+
+  function prevQuestion() {
+    if (roomState.qIndex <= 0) {
+      showToast('أنت بالفعل في السؤال الأول', 'info');
+      return;
+    }
+    roomState.qIndex -= 2; // proceedToNextQ سيزيدها بواحد
+    roomState.showTransition = false;
+    roomState.showPressureTransition = false;
+    proceedToNextQ();
+  }
+
+  function nextQuestion() {
+    if (!isLocalMode && (!roomState.team1Connected || !roomState.team2Connected)) return;
+    roomState.gameStarted = true;
+
+    if (roomState.isTieBreaker) {
+      endMatch();
+      return;
+    }
+
+    const nextIdx = roomState.qIndex + 1;
+    if (nextIdx >= COMPETITION_QUESTIONS.length) {
+      endMatch();
+      return;
+    }
+
+    const curStage = roomState.qIndex >= 0 ? COMPETITION_QUESTIONS[roomState.qIndex].stage : 1;
+    const nxtStage = COMPETITION_QUESTIONS[nextIdx].stage;
+
+    if (roomState.qIndex >= 0 && curStage === 1 && nxtStage === 2 && !roomState.showTransition) {
+      clearInterval(timerInterval);
+      roomState.showTransition = true;
+      roomState.buzzerOpen = false;
+      playTone('win');
+      setArenaState('neutral');
+      broadcastState();
+      renderUI();
+      return;
+    }
+
+    if (roomState.qIndex >= 0 && curStage === 2 && nxtStage === 3 && !roomState.showPressureTransition) {
+      clearInterval(timerInterval);
+      roomState.showPressureTransition = true;
+      roomState.buzzerOpen = false;
+      playTone('win');
+      setArenaState('neutral');
+      broadcastState();
+
+      showParagraphIntroModal(3, "الفقرة الثالثة: تحت الضغط", () => {
+        roomState.showPressureTransition = false;
+        runPreShowCountdown('⚡ الفقرة الثالثة: تحت الضغط (10 ث بعد الجرس)', () => proceedToNextQ());
+      });
+      return;
+    }
+
+    proceedToNextQ();
+  }
+
+  function proceedToNextQ() {
+    roomState.qIndex++;
+    const qObj = COMPETITION_QUESTIONS[roomState.qIndex];
+    roomState.stage = qObj.stage;
+    roomState.showTransition = false;
+    roomState.showPressureTransition = false;
+    roomState.currentQ = qObj;
+    roomState.buzzerOpen = true;
+    roomState.buzzedTeam = null;
+    roomState.lockedTeams = [];
+    roomState.wrongOptions = [];
+    roomState.eliminatedOptions = [];
+    roomState.friendCallActive = false;
+    clearInterval(friendInterval);
+    roomState.revealed = false;
+    roomState.selectedOpt = null;
+    roomState.statusMessage = '';
+    roomState.timerPaused = false;
+    roomState.buzzReactionMs = null;
+    roomState.timer = getQuestionTime(roomState.qIndex);
+    questionOpenedAt = performance.now();
+
+    setArenaState('neutral');
+    playTone('next');
+    startTimer();
+    broadcastState();
+    renderUI();
+  }
+
+  function startStageTwo() {
+    document.getElementById('stage-transition-modal').classList.add('hidden');
+    document.getElementById('stage-transition-modal').classList.remove('flex');
+
+    showParagraphIntroModal(2, "الفقرة الثانية: مرحلة الضعف (الدابل)", () => {
+      roomState.showTransition = false;
+      runPreShowCountdown('المرحلة الثانية: مرحلة الضعف (×2)', () => {
+        proceedToNextQ();
+      });
+    });
+  }
+
+  function toggleTimerPause() {
+    if (!roomState.currentQ || roomState.revealed || roomState.matchEnded) return;
+    roomState.timerPaused = !roomState.timerPaused;
+    if (roomState.timerPaused) {
+      clearInterval(timerInterval);
+      showToast('تم إيقاف المؤقت مؤقتاً', 'info');
+    } else {
+      startTimer();
+      showToast('تم استئناف المؤقت', 'success');
+    }
+    broadcastState();
+    renderUI();
+  }
+
+  function startTimer() {
+    clearInterval(timerInterval);
+    roomState.timerPaused = false;
+    timerInterval = setInterval(() => {
+      if (roomState.timer > 0 && !roomState.revealed && !roomState.showTransition && !roomState.showPressureTransition && !roomState.timerPaused) {
+        roomState.timer--;
+        const timerEl = document.getElementById('host-timer');
+        if (timerEl) timerEl.innerText = roomState.timer;
+
+        const timerPillEl = document.getElementById('host-timer-pill');
+        if (timerPillEl) {
+          timerPillEl.classList.toggle('timer-urgent', !roomState.revealed && roomState.timer > 0 && roomState.timer <= 5);
+        }
+
+        if (roomState.timer === 0) {
+          playTone('timeout');
+          setArenaState('wrong');
+          if (timerPillEl) timerPillEl.classList.remove('timer-urgent');
+
+          if (roomState.buzzedTeam) {
+            const timedOutTeam = roomState.buzzedTeam;
+            const timedOutName = timedOutTeam === 'team1' ? roomState.team1Name : roomState.team2Name;
+            const otherTeam = timedOutTeam === 'team1' ? 'team2' : 'team1';
+            const otherTeamName = otherTeam === 'team1' ? roomState.team1Name : roomState.team2Name;
+
+            if (!roomState.lockedTeams.includes(timedOutTeam)) {
+              roomState.lockedTeams.push(timedOutTeam);
+            }
+
+            if (!roomState.lockedTeams.includes(otherTeam)) {
+              roomState.buzzedTeam = null;
+              roomState.buzzerOpen = true;
+              roomState.timer = getBuzzAnswerTime(roomState.qIndex);
+              roomState.statusMessage = `انتهى وقت ${timedOutName} — الجرس مفتوح الآن لـ ${otherTeamName} (${roomState.timer} ثوانٍ)`;
+            } else {
+              roomState.buzzedTeam = null;
+              roomState.buzzerOpen = false;
+              roomState.statusMessage = `انتهى الوقت — اضغط على "إظهار الإجابة"`;
+              clearInterval(timerInterval);
+            }
+          } else {
+            roomState.buzzerOpen = false;
+            roomState.statusMessage = `انتهى وقت السؤال — اضغط على "إظهار الإجابة"`;
+            clearInterval(timerInterval);
+          }
+          broadcastState();
+          renderUI();
+        } else {
+          if (roomState.timer <= 5) {
+            playTone('tick_urgent');
+          } else {
+            playTone('tick');
+          }
+          broadcastTimerTick();
+        }
+      }
+    }, 1000);
+  }
+
+  function triggerTeamBuzz(team) {
+    if (!roomState.buzzerOpen || roomState.buzzedTeam || roomState.lockedTeams.includes(team) || roomState.revealed) return;
+    pushUndoSnapshot();
+    roomState.buzzerOpen = false;
+    roomState.buzzedTeam = team;
+    roomState.buzzReactionMs = questionOpenedAt ? Math.max(50, Math.round(performance.now() - questionOpenedAt)) : null;
+    roomState.statusMessage = '';
+    roomState.timerPaused = false;
+    roomState.timer = getBuzzAnswerTime(roomState.qIndex);
+    playTone('buzz');
+    setArenaState(team);
+    startTimer();
+    broadcastState();
+    renderUI();
+  }
+
+  function manualBuzz(team) {
+    if (myRole !== 'host') return;
+    if (!roomState.currentQ || roomState.revealed) return;
+    if (roomState.lockedTeams.includes(team)) {
+      showToast('انتهت فرصة هذا الفريق في هذا السؤال — اضغط "فتح الجرس" لإعادة المحاولة', 'info');
+      return;
+    }
+    if (roomState.buzzedTeam) {
+      showToast('يوجد فريق يجيب حالياً بالفعل', 'info');
+      return;
+    }
+    roomState.buzzerOpen = true;
+    triggerTeamBuzz(team);
+  }
+
+  function pressBuzzer() {
+    if (!roomState.buzzerOpen || roomState.buzzedTeam || roomState.lockedTeams.includes(myRole)) return;
+    const buzzBtn = document.getElementById('team-buzzer-btn');
+    const statusText = document.getElementById('team-status-text');
+    if (buzzBtn) buzzBtn.disabled = true;
+    if (statusText) statusText.innerText = '⚡ تم الضغط — جاري فتح الاختيارات...';
+    roomState.buzzerOpen = false;
+    vibrateDevice([70, 40, 100]);
+    playTone('buzz');
+    if (hostConn && hostConn.open) {
+      hostConn.send({ type: 'BUZZ', team: myRole });
+    }
+  }
+
+  function unlockBuzzers() {
+    if (!roomState.currentQ || roomState.revealed) return;
+    pushUndoSnapshot();
+    clearInterval(friendInterval);
+    roomState.friendCallActive = false;
+    roomState.buzzerOpen = true;
+    roomState.buzzedTeam = null;
+    roomState.buzzReactionMs = null;
+    questionOpenedAt = performance.now();
+    roomState.lockedTeams = [];
+    roomState.statusMessage = '';
+    roomState.timerPaused = false;
+    roomState.timer = getQuestionTime(roomState.qIndex);
+    setArenaState('neutral');
+    startTimer();
+    broadcastState();
+    renderUI();
+  }
+
+  // ===== وسائل المساعدة: حذف إجابتين (50:50) + الاستعانة بصديق (30 ثانية) =====
+  function requestLifelineFromMobile(kind) {
+    if (myRole !== 'team1' && myRole !== 'team2') return;
+    if (roomState.buzzedTeam !== myRole || roomState.revealed) return;
+    if (hostConn && hostConn.open) {
+      hostConn.send({ type: 'LIFELINE', team: myRole, kind: kind });
+    }
+  }
+
+  function useLifeline(team, kind) {
+    if (myRole !== 'host') return;
+    if (!roomState.currentQ || roomState.revealed || roomState.matchEnded) {
+      showToast('وسائل المساعدة متاحة فقط أثناء السؤال النشط', 'info');
+      return;
+    }
+    const lfKey = (team === 'team1') ? 'team1Lifelines' : 'team2Lifelines';
+    const teamName = (team === 'team1') ? roomState.team1Name : roomState.team2Name;
+    if (!roomState[lfKey] || !roomState[lfKey][kind]) {
+      showToast(`${teamName} استنفد هذه الوسيلة بالفعل`, 'error');
+      return;
+    }
+
+    if (kind === 'fifty') {
+      const wrongCandidates = [0, 1, 2, 3].filter(i =>
+        i !== roomState.currentQ.ans &&
+        !roomState.wrongOptions.includes(i) &&
+        !roomState.eliminatedOptions.includes(i)
+      );
+      if (wrongCandidates.length < 2) {
+        showToast('لا توجد إجابات خاطئة كافية للحذف', 'info');
+        return;
+      }
+      // خلط عشوائي واختيار إجابتين خاطئتين للحذف
+      for (let i = wrongCandidates.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [wrongCandidates[i], wrongCandidates[j]] = [wrongCandidates[j], wrongCandidates[i]];
+      }
+      roomState.eliminatedOptions = [...roomState.eliminatedOptions, wrongCandidates[0], wrongCandidates[1]];
+      roomState[lfKey].fifty = false;
+      playTone('win');
+      showToast(`✨ استخدم ${teamName} وسيلة حذف إجابتين (50:50)!`, 'success');
+      broadcastState();
+      renderUI();
+    } else if (kind === 'friend') {
+      roomState[lfKey].friend = false;
+      roomState.friendCallActive = true;
+      roomState.friendCallTeam = team;
+      roomState.friendCallTimer = 30;
+      roomState.timerPaused = true;
+      clearInterval(timerInterval);
+      playTone('win');
+
+      const modal = document.getElementById('friend-call-modal');
+      const nameEl = document.getElementById('friend-call-team-name');
+      const timerEl = document.getElementById('friend-call-timer');
+      if (nameEl) nameEl.innerText = teamName;
+      if (timerEl) timerEl.innerText = '30';
+      if (modal) {
+        modal.classList.remove('hidden');
+        modal.classList.add('flex');
+      }
+
+      clearInterval(friendInterval);
+      friendInterval = setInterval(() => {
+        if (roomState.friendCallTimer > 0) {
+          roomState.friendCallTimer--;
+          if (timerEl) timerEl.innerText = roomState.friendCallTimer;
+          playTone(roomState.friendCallTimer <= 5 ? 'tick_urgent' : 'tick');
+          if (!isLocalMode) {
+            ['team1', 'team2'].forEach(t => {
+              if (teamConns[t] && teamConns[t].open) {
+                try { teamConns[t].send({ type: 'FRIEND_TICK', friendCallTimer: roomState.friendCallTimer }); } catch (e) {}
+              }
+            });
+          }
+          if (roomState.friendCallTimer === 0) {
+            playTone('timeout');
+            endFriendCall();
+          }
+        }
+      }, 1000);
+
+      showToast(`📞 ${teamName} يستعين بصديق (30 ثانية)!`, 'success');
+      broadcastState();
+      renderUI();
+    }
+  }
+
+  function endFriendCall() {
+    clearInterval(friendInterval);
+    roomState.friendCallActive = false;
+    const modal = document.getElementById('friend-call-modal');
+    if (modal) {
+      modal.classList.add('hidden');
+      modal.classList.remove('flex');
+    }
+    if (!roomState.revealed && !roomState.matchEnded && roomState.currentQ) {
+      roomState.timerPaused = false;
+      startTimer();
+    }
+    broadcastState();
+    renderUI();
+  }
+
+  // ===== خريطة القفز السريع للأسئلة =====
+  function toggleQuestionJumpModal(show) {
+    const m = document.getElementById('question-jump-modal');
+    if (!m) return;
+    if (show) renderQuestionJumpGrid();
+    m.classList.toggle('hidden', !show);
+    m.classList.toggle('flex', show);
+  }
+
+  function renderQuestionJumpGrid() {
+    const grid = document.getElementById('question-jump-grid');
+    if (!grid) return;
+    const stageMeta = [
+      { stage: 1, title: 'المرحلة الأولى (10 نقاط • 20 ث)', accent: 'border-amber-400/50 text-amber-300' },
+      { stage: 2, title: 'المرحلة الثانية: الضعف (20 نقطة • 20 ث)', accent: 'border-sky-400/50 text-sky-300' },
+      { stage: 3, title: 'الفقرة الثالثة: تحت الضغط (20 نقطة • 10 ث بعد الجرس)', accent: 'border-rose-400/60 text-rose-300' }
+    ];
+    grid.innerHTML = stageMeta.map(meta => {
+      const btns = [];
+      COMPETITION_QUESTIONS.forEach((q, idx) => {
+        if (q.stage !== meta.stage) return;
+        const isCurrent = !roomState.isTieBreaker && idx === roomState.qIndex;
+        const cls = isCurrent
+          ? 'bg-amber-400 text-slate-950 border-amber-200 scale-105 shadow-lg'
+          : 'bg-slate-900/90 hover:bg-slate-800 text-white border-slate-700';
+        btns.push(`<button onclick="jumpToQuestion(${idx})" class="py-2 rounded-xl border font-black text-sm cursor-pointer transition-all ${cls}">${idx + 1}</button>`);
+      });
+      if (!btns.length) return '';
+      return `<div class="bg-slate-950/75 rounded-2xl p-3.5 border ${meta.accent}">
+        <div class="text-xs font-black mb-2.5">${meta.title}</div>
+        <div class="grid grid-cols-5 sm:grid-cols-10 gap-2">${btns.join('')}</div>
+      </div>`;
+    }).join('');
+  }
+
+  function jumpToQuestion(idx) {
+    if (idx < 0 || idx >= COMPETITION_QUESTIONS.length) return;
+    toggleQuestionJumpModal(false);
+    roomState.isTieBreaker = false;
+    roomState.qIndex = idx - 1;
+    roomState.showTransition = false;
+    roomState.showPressureTransition = false;
+    proceedToNextQ();
+  }
+
+  function submitAnswer(optIdx) {
+    vibrateDevice(50);
+    if (myRole === 'host') {
+      if (!roomState.buzzedTeam && !roomState.revealed) {
+        showToast('اضغط جرس أحد الفريقين أولاً (أو اضغط "إظهار الإجابة")', 'info');
+        return;
+      }
+      handleAnswerSubmission(optIdx, roomState.buzzedTeam);
+    } else if (hostConn && hostConn.open) {
+      hostConn.send({ type: 'ANSWER', optIdx: optIdx, team: myRole });
+    }
+  }
+
+  function handleAnswerSubmission(optIdx, answeringTeam) {
+    if (!roomState.currentQ || roomState.revealed || !answeringTeam) return;
+    if (roomState.wrongOptions.includes(optIdx) || roomState.eliminatedOptions.includes(optIdx)) return;
+    pushUndoSnapshot();
+
+    const isCorrect = optIdx === roomState.currentQ.ans;
+    const pts = getQuestionPoints(roomState.qIndex);
+
+    if (isCorrect) {
+      clearInterval(timerInterval);
+      playTone('correct');
+      setArenaState('correct');
+      fireCelebrationConfetti();
+      roomState.selectedOpt = optIdx;
+      roomState.revealed = true;
+      roomState.buzzerOpen = false;
+      roomState.timerPaused = false;
+      roomState.statusMessage = '';
+      if (answeringTeam === 'team1') {
+        roomState.team1Score += pts;
+        roomState.team1Correct++;
+        roomState.team1Streak = (roomState.team1Streak || 0) + 1;
+        roomState.team2Streak = 0;
+        if (roomState.team1Streak >= 3) {
+          playTone('streak');
+          showToast(`🔥 ${roomState.team1Name} في سلسلة تألق (${roomState.team1Streak} إجابات متتالية)!`, 'success');
+        }
+      }
+      if (answeringTeam === 'team2') {
+        roomState.team2Score += pts;
+        roomState.team2Correct++;
+        roomState.team2Streak = (roomState.team2Streak || 0) + 1;
+        roomState.team1Streak = 0;
+        if (roomState.team2Streak >= 3) {
+          playTone('streak');
+          showToast(`🔥 ${roomState.team2Name} في سلسلة تألق (${roomState.team2Streak} إجابات متتالية)!`, 'success');
+        }
+      }
+    } else {
+      playTone('wrong');
+      setArenaState('wrong');
+      if (!roomState.wrongOptions.includes(optIdx)) {
+        roomState.wrongOptions.push(optIdx);
+      }
+      if (answeringTeam === 'team1') roomState.team1Streak = 0;
+      if (answeringTeam === 'team2') roomState.team2Streak = 0;
+      if (!roomState.lockedTeams.includes(answeringTeam)) {
+        roomState.lockedTeams.push(answeringTeam);
+      }
+
+      const wrongTeamName = answeringTeam === 'team1' ? roomState.team1Name : roomState.team2Name;
+      const otherTeam = answeringTeam === 'team1' ? 'team2' : 'team1';
+      const otherTeamName = otherTeam === 'team1' ? roomState.team1Name : roomState.team2Name;
+
+      if (!roomState.lockedTeams.includes(otherTeam)) {
+        roomState.buzzedTeam = null;
+        roomState.buzzerOpen = true;
+        roomState.timer = getBuzzAnswerTime(roomState.qIndex);
+        roomState.revealed = false;
+        roomState.statusMessage = `إجابة خاطئة من ${wrongTeamName} — الجرس مفتوح الآن لـ ${otherTeamName} (${roomState.timer} ثوانٍ)`;
+        startTimer();
+      } else {
+        clearInterval(timerInterval);
+        roomState.buzzedTeam = null;
+        roomState.buzzerOpen = false;
+        roomState.revealed = false;
+        roomState.statusMessage = `إجابة خاطئة — اضغط على "إظهار الإجابة" لكشف الحل`;
+      }
+    }
+
+    broadcastState();
+    renderUI();
+  }
+
+  function revealAnswer() {
+    clearInterval(timerInterval);
+    roomState.revealed = true;
+    roomState.buzzerOpen = false;
+    roomState.timerPaused = false;
+    roomState.statusMessage = '';
+    setArenaState('correct');
+    broadcastState();
+    renderUI();
+  }
+
+  function adjustScore(team, delta) {
+    pushUndoSnapshot();
+    if (team === 'team1') roomState.team1Score = Math.max(0, roomState.team1Score + delta);
+    if (team === 'team2') roomState.team2Score = Math.max(0, roomState.team2Score + delta);
+    broadcastState();
+    renderUI();
+  }
+
+  function syncTeamNames() {
+    roomState.team1Name = document.getElementById('team1-name-input').value.trim() || 'الفريق الأول';
+    roomState.team2Name = document.getElementById('team2-name-input').value.trim() || 'الفريق الثاني';
+    broadcastState();
+  }
+
+  function renderUI() {
+    if (myRole === 'host') {
+      const waitScreen = document.getElementById('host-waiting-screen');
+      const gameScreen = document.getElementById('host-game-screen');
+
+      if (!roomState.gameStarted) {
+        waitScreen.classList.remove('hidden');
+        gameScreen.classList.add('hidden');
+
+        const connectedCount = (roomState.team1Connected ? 1 : 0) + (roomState.team2Connected ? 1 : 0);
+        const wHeadline = document.getElementById('waiting-headline');
+        const wSub = document.getElementById('waiting-subheadline');
+        const startBtn = document.getElementById('start-game-locked-btn');
+
+        const c1 = document.getElementById('wait-card-team1');
+        const s1 = document.getElementById('wait-status-team1');
+        const m1 = document.getElementById('wait-members-team1');
+        if (roomState.team1Connected) {
+          c1.className = 'royal-dark-card rounded-3xl p-5 text-center min-h-[190px] flex flex-col items-center justify-center border border-rose-500 shadow-[0_0_30px_rgba(244,63,94,0.25)]';
+          s1.innerText = roomState.team1Name;
+          s1.className = 'text-2xl font-black text-white';
+          if (m1) m1.innerHTML = (roomState.team1Members || []).map(n => `<span class="px-2 py-0.5 rounded-full bg-rose-500/15 border border-rose-400/40 text-rose-200">${n}</span>`).join('');
+        } else {
+          c1.className = 'royal-dark-card rounded-3xl p-5 text-center min-h-[190px] flex flex-col items-center justify-center border border-rose-500/30';
+          s1.innerText = 'في الانتظار';
+          s1.className = 'text-xl font-black text-slate-500';
+          if (m1) m1.innerHTML = '';
+        }
+
+        const c2 = document.getElementById('wait-card-team2');
+        const s2 = document.getElementById('wait-status-team2');
+        const m2 = document.getElementById('wait-members-team2');
+        if (roomState.team2Connected) {
+          c2.className = 'royal-dark-card rounded-3xl p-5 text-center min-h-[190px] flex flex-col items-center justify-center border border-blue-500 shadow-[0_0_30px_rgba(59,130,246,0.25)]';
+          s2.innerText = roomState.team2Name;
+          s2.className = 'text-2xl font-black text-white';
+          if (m2) m2.innerHTML = (roomState.team2Members || []).map(n => `<span class="px-2 py-0.5 rounded-full bg-blue-500/15 border border-blue-400/40 text-blue-200">${n}</span>`).join('');
+        } else {
+          c2.className = 'royal-dark-card rounded-3xl p-5 text-center min-h-[190px] flex flex-col items-center justify-center border border-blue-500/30';
+          s2.innerText = 'في الانتظار';
+          s2.className = 'text-xl font-black text-slate-500';
+          if (m2) m2.innerHTML = '';
+        }
+
+        if (connectedCount === 0) {
+          wHeadline.innerText = 'فين الفريقين؟';
+          wSub.innerText = 'امسح رمز الـ QR بالموبايل لتسجيل اسم الفريق (0 / 2)';
+          startBtn.disabled = true;
+          startBtn.innerHTML = '<span>في انتظار اكتمال الفريقين (0 / 2)</span>';
+          startBtn.className = 'btn-3d px-12 py-4 rounded-2xl bg-slate-900 border border-slate-800 text-slate-500 font-black text-lg sm:text-xl cursor-not-allowed';
+        } else if (connectedCount === 1) {
+          wHeadline.innerText = 'فاضل فريق واحد';
+          wSub.innerText = 'تم تسجيل فريق، في انتظار انضمام الفريق الثاني (1 / 2)';
+          startBtn.disabled = true;
+          startBtn.innerHTML = '<span>في انتظار الفريق الثاني (1 / 2)</span>';
+          startBtn.className = 'btn-3d px-12 py-4 rounded-2xl bg-sky-950/80 border border-sky-500/40 text-sky-300/70 font-black text-lg sm:text-xl cursor-not-allowed';
+        } else {
+          wHeadline.innerText = 'يلا نبدأ كملنا';
+          wSub.innerText = 'الفريقان جاهزان الآن لبدء المسابقة (2 / 2)';
+          startBtn.disabled = false;
+          startBtn.innerHTML = '<span class="gold-shimmer-text">بدء المسابقة الآن ◀</span>';
+          startBtn.className = 'dark-gold-btn winner-glow px-14 py-4 rounded-2xl font-black text-xl sm:text-2xl cursor-pointer';
+        }
+        return;
+      }
+
+      waitScreen.classList.add('hidden');
+      gameScreen.classList.remove('hidden');
+
+      document.getElementById('host-team1-score').innerText = roomState.team1Score;
+      document.getElementById('host-team2-score').innerText = roomState.team2Score;
+      document.getElementById('host-timer').innerText = roomState.timer;
+
+      // مزامنة نبض العداد الأحمر وحالة زر الإيقاف المؤقت
+      const timerPillEl = document.getElementById('host-timer-pill');
+      if (timerPillEl) {
+        timerPillEl.classList.toggle('timer-urgent', !roomState.revealed && !roomState.timerPaused && roomState.timer > 0 && roomState.timer <= 5);
+      }
+      const pauseBtn = document.getElementById('pause-timer-btn');
+      if (pauseBtn) {
+        pauseBtn.innerText = roomState.timerPaused ? 'استئناف المؤقت' : 'إيقاف مؤقت';
+      }
+
+      // نقاط حالة الاتصال
+      const dot1 = document.getElementById('team1-conn-dot');
+      const dot2 = document.getElementById('team2-conn-dot');
+      if (dot1) dot1.className = `w-2.5 h-2.5 rounded-full shrink-0 ${roomState.team1Connected ? 'bg-emerald-400 shadow-[0_0_8px_#34d399]' : 'bg-rose-500 animate-pulse'}`;
+      if (dot2) dot2.className = `w-2.5 h-2.5 rounded-full shrink-0 ${roomState.team2Connected ? 'bg-emerald-400 shadow-[0_0_8px_#34d399]' : 'bg-rose-500 animate-pulse'}`;
+
+      const qrTopBtn = document.getElementById('qr-topbar-btn');
+      if (qrTopBtn) qrTopBtn.classList.toggle('hidden', isLocalMode);
+
+      const box1 = document.getElementById('host-team1-box');
+      const box2 = document.getElementById('host-team2-box');
+      box1.classList.toggle('winner-glow', roomState.buzzedTeam === 'team1');
+      box2.classList.toggle('winner-glow', roomState.buzzedTeam === 'team2');
+
+      const st1 = document.getElementById('team1-streak-badge');
+      const st2 = document.getElementById('team2-streak-badge');
+      if (st1) {
+        st1.classList.toggle('hidden', (roomState.team1Streak || 0) < 3);
+        st1.innerText = `🔥 ×${roomState.team1Streak || 0}`;
+      }
+      if (st2) {
+        st2.classList.toggle('hidden', (roomState.team2Streak || 0) < 3);
+        st2.innerText = `🔥 ×${roomState.team2Streak || 0}`;
+      }
+
+      const stagePill = document.getElementById('stage-indicator-pill');
+      if (roomState.isTieBreaker) {
+        stagePill.innerText = '⚡ السؤال الفاصل (Golden Question • 20 نقطة)';
+        stagePill.className = 'w-full bg-amber-400/25 border border-amber-300 rounded-xl py-1 px-3 text-xs sm:text-sm font-black text-amber-200 winner-glow';
+      } else if (roomState.stage === 3 || (roomState.currentQ && roomState.currentQ.stage === 3)) {
+        stagePill.innerText = 'الفقرة الثالثة: تحت الضغط (10 ث بعد الجرس • 20 نقطة)';
+        stagePill.className = 'w-full bg-rose-500/20 border border-rose-400/70 rounded-xl py-1 px-3 text-xs sm:text-sm font-black text-rose-200';
+      } else if (roomState.stage === 2) {
+        stagePill.innerText = 'المرحلة الثانية: مرحلة الضعف (×2 • 20 نقطة)';
+        stagePill.className = 'w-full bg-amber-500/15 border border-amber-400/60 rounded-xl py-1 px-3 text-xs sm:text-sm font-black text-amber-300';
+      } else {
+        stagePill.innerText = 'المرحلة الأولى (10 أسئلة • 10 نقاط)';
+        stagePill.className = 'w-full bg-slate-950/90 border border-amber-400/35 rounded-xl py-1 px-3 text-xs sm:text-sm font-black text-amber-300';
+      }
+
+      const transModal = document.getElementById('stage-transition-modal');
+      if (roomState.showTransition) {
+        transModal.classList.remove('hidden');
+        transModal.classList.add('flex');
+      } else {
+        transModal.classList.add('hidden');
+        transModal.classList.remove('flex');
+      }
+
+      const currentNum = Math.max(1, roomState.qIndex + 1);
+      document.getElementById('question-progress-bar').style.width = `${Math.max(3, (currentNum / COMPETITION_QUESTIONS.length) * 100)}%`;
+
+      const nextBtnLabel = document.getElementById('next-q-btn-label');
+      const nextQObj = COMPETITION_QUESTIONS[roomState.qIndex + 1];
+      if (roomState.isTieBreaker) {
+        nextBtnLabel.innerText = 'إعلان الفائز النهائي 🏆';
+      } else if (nextQObj && roomState.currentQ && roomState.currentQ.stage === 1 && nextQObj.stage === 2) {
+        nextBtnLabel.innerText = 'الانتقال للفقرة الثانية (الدابل)';
+      } else if (nextQObj && roomState.currentQ && roomState.currentQ.stage === 2 && nextQObj.stage === 3) {
+        nextBtnLabel.innerText = 'الانتقال للفقرة الثالثة (تحت الضغط)';
+      } else if (!nextQObj) {
+        nextBtnLabel.innerText = `إنهاء وإعلان النتيجة (${COMPETITION_QUESTIONS.length}/${COMPETITION_QUESTIONS.length})`;
+      } else {
+        nextBtnLabel.innerText = `السؤال التالي (${currentNum + 1}/${COMPETITION_QUESTIONS.length})`;
+      }
+
+      const banner = document.getElementById('buzz-banner');
+      if (roomState.buzzedTeam) {
+        const isTeam1 = roomState.buzzedTeam === 'team1';
+        const name = isTeam1 ? roomState.team1Name : roomState.team2Name;
+        const reactLabel = roomState.buzzReactionMs ? ` (${(roomState.buzzReactionMs / 1000).toFixed(2)} ث)` : '';
+        banner.classList.remove('hidden');
+        banner.className = `mb-3 py-2.5 px-6 rounded-2xl text-center font-black text-xl sm:text-2xl shadow-2xl ${isTeam1 ? 'bg-rose-600 text-white' : 'bg-blue-600 text-white'}`;
+        banner.innerText = `⚡ الأسرع في الجرس: ${name}${reactLabel}`;
+      } else if (roomState.statusMessage) {
+        banner.classList.remove('hidden');
+        banner.className = 'mb-3 py-2.5 px-6 rounded-2xl text-center font-black text-lg sm:text-2xl shadow-2xl bg-amber-600 text-white';
+        banner.innerText = roomState.statusMessage;
+      } else {
+        banner.classList.add('hidden');
+      }
+
+      const expBox = document.getElementById('explanation-box');
+
+      if (roomState.currentQ) {
+        const ptsLabel = getQuestionPoints(roomState.qIndex) + ' نقطة';
+        document.getElementById('q-badge').innerText = `سؤال ${roomState.currentQ.num} من ${COMPETITION_QUESTIONS.length} • ${ptsLabel}`;
+        document.getElementById('host-question-text').innerText = roomState.currentQ.q;
+
+        // تحديث حالة أزرار وسائل المساعدة على شاشة الهوست
+        const syncLifelineBtn = (id, avail) => {
+          const b = document.getElementById(id);
+          if (!b) return;
+          b.disabled = !avail;
+          b.classList.toggle('opacity-30', !avail);
+          b.classList.toggle('line-through', !avail);
+          b.classList.toggle('cursor-not-allowed', !avail);
+        };
+        syncLifelineBtn('host-t1-fifty', roomState.team1Lifelines?.fifty);
+        syncLifelineBtn('host-t1-friend', roomState.team1Lifelines?.friend);
+        syncLifelineBtn('host-t2-fifty', roomState.team2Lifelines?.fifty);
+        syncLifelineBtn('host-t2-friend', roomState.team2Lifelines?.friend);
+
+        const grid = document.getElementById('host-options-grid');
+        const letters = ['A', 'B', 'C', 'D'];
+        grid.innerHTML = roomState.currentQ.opts.map((opt, i) => {
+          const isElim = roomState.eliminatedOptions.includes(i);
+          let style = 'opt-royal-btn text-white';
+          if (roomState.revealed) {
+            if (i === roomState.currentQ.ans) style = 'bg-emerald-600 border border-emerald-300 text-white shadow-[0_6px_0_#064e3b]';
+            else if (roomState.wrongOptions.includes(i) || i === roomState.selectedOpt) style = 'bg-rose-700 border border-rose-300 text-white';
+            else style = 'bg-slate-900/40 border border-slate-800 text-slate-500';
+          } else if (isElim) {
+            style = 'bg-slate-950/40 border border-slate-800/60 text-slate-600 line-through opacity-35 cursor-not-allowed';
+          } else if (roomState.wrongOptions.includes(i)) {
+            style = 'bg-rose-950/85 border border-rose-500/80 text-rose-200 opacity-75';
+          }
+          return `<button onclick="submitAnswer(${i})" ${isElim && !roomState.revealed ? 'disabled' : ''} class="en-font p-5 rounded-2xl text-left font-extrabold text-lg sm:text-2xl flex items-center gap-4 cursor-pointer ${style}">
+            <span class="w-11 h-11 shrink-0 rounded-xl bg-slate-950 border border-amber-400/55 flex items-center justify-center gold-shimmer-text font-black text-base sm:text-lg shadow">${letters[i]}</span>
+            <span>${opt}</span>
+          </button>`;
+        }).join('');
+
+        if (roomState.revealed && roomState.currentQ.exp) {
+          expBox.classList.remove('hidden');
+          expBox.innerHTML = `<span class="gold-shimmer-text">💡 التفسير العلمي:</span> ${roomState.currentQ.exp}`;
+        } else {
+          expBox.classList.add('hidden');
+        }
+      }
+    } else if (myRole === 'team1' || myRole === 'team2') {
+      document.getElementById('team-header-name').innerText = myRole === 'team1' ? roomState.team1Name : roomState.team2Name;
+      const hdrMembers = document.getElementById('team-header-members');
+      const myMemList = myRole === 'team1' ? (roomState.team1Members || []) : (roomState.team2Members || []);
+      if (hdrMembers) hdrMembers.innerText = myMemList.length ? myMemList.join(' • ') : '';
+      document.getElementById('team-my-score').innerText = myRole === 'team1' ? roomState.team1Score : roomState.team2Score;
+
+      const teamStagePill = document.getElementById('team-stage-pill');
+      if (roomState.stage === 3 || roomState.qIndex >= 20) {
+        teamStagePill.innerText = 'الفقرة الثالثة: تحت الضغط (10 ث بعد الجرس • 20 نقطة)';
+        teamStagePill.className = 'px-4 py-1 rounded-full bg-rose-500/20 border border-rose-400/60 text-rose-200 text-xs font-black';
+      } else if (roomState.stage === 2) {
+        teamStagePill.innerText = 'المرحلة الثانية: مرحلة الضعف (20 نقطة)';
+        teamStagePill.className = 'px-4 py-1 rounded-full bg-amber-500/20 border border-amber-400/50 text-amber-300 text-xs font-black';
+      } else {
+        teamStagePill.innerText = 'المرحلة الأولى (10 نقاط)';
+        teamStagePill.className = 'px-4 py-1 rounded-full bg-slate-950 border border-amber-400/35 text-amber-300 text-xs font-black';
+      }
+
+      const myStreak = (myRole === 'team1') ? (roomState.team1Streak || 0) : (roomState.team2Streak || 0);
+      const mobStreakEl = document.getElementById('team-mobile-streak');
+      if (mobStreakEl) {
+        mobStreakEl.classList.toggle('hidden', myStreak < 3);
+        mobStreakEl.innerText = `🔥 متألق ×${myStreak}`;
+      }
+
+      const timerPill = document.getElementById('team-timer-pill');
+      if (roomState.gameStarted && !roomState.revealed && !roomState.showTransition && !roomState.showPressureTransition) {
+        timerPill.classList.remove('hidden');
+        timerPill.innerText = roomState.timerPaused ? `⏸ ${roomState.timer} ث` : `⏱ ${roomState.timer} ث`;
+      } else {
+        timerPill.classList.add('hidden');
+      }
+
+      const playArea = document.getElementById('team-play-area');
+      const endArea = document.getElementById('team-end-area');
+
+      if (roomState.matchEnded) {
+        playArea.classList.add('hidden');
+        endArea.classList.remove('hidden');
+
+        const card = document.getElementById('team-end-card');
+        const emoji = document.getElementById('team-end-emoji');
+        const headline = document.getElementById('team-end-headline');
+        const subtext = document.getElementById('team-end-subtext');
+        const scoresEl = document.getElementById('team-end-scores');
+
+        scoresEl.innerText = `${roomState.team1Name}: ${roomState.team1Score}  |  ${roomState.team2Name}: ${roomState.team2Score}`;
+
+        if (roomState.sessionClosed) {
+          card.className = 'royal-dark-card royal-crown-card rounded-3xl p-8 text-center';
+          emoji.innerText = '🎓✨';
+          headline.innerText = 'تمت المسابقة بنجاح!';
+          headline.className = 'text-3xl sm:text-4xl font-black gold-shimmer-text mb-3';
+          subtext.innerText = 'كل الشكر والتقدير لمشاركتكم المميزة في مسابقة العباقرة بكلية الصيدلة - جامعة المنصورة الأهلية.';
+        } else if (roomState.winnerTeam === myRole) {
+          card.className = 'royal-dark-card royal-crown-card winner-glow rounded-3xl p-8 text-center';
+          emoji.innerText = '🏆🎓';
+          headline.innerText = 'مبروووك!';
+          headline.className = 'text-4xl sm:text-5xl font-black gold-shimmer-text mb-3';
+          subtext.innerText = 'ألف مبروك الفوز في مسابقة العباقرة! أداء علمي مشرف.';
+        } else if (roomState.winnerTeam === 'tie') {
+          card.className = 'royal-dark-card rounded-3xl p-8 text-center border border-sky-400/50';
+          emoji.innerText = '🤝🎓';
+          headline.innerText = 'تعادل بطولي!';
+          headline.className = 'text-4xl font-black text-sky-400 mb-3';
+          subtext.innerText = 'منافسة قوية وتعادل مستحق بين الفريقين!';
+        } else {
+          card.className = 'royal-dark-card rounded-3xl p-8 text-center border border-rose-400/40';
+          emoji.innerText = '💪🎓';
+          headline.innerText = 'متزعلش متعوضة!';
+          headline.className = 'text-3xl sm:text-4xl font-black text-rose-300 mb-3';
+          subtext.innerText = 'متزعلش متعوضة المرة الجاية بإذن الله.. عملتوا ماتش عالمي وعاش على مجهودكم!';
+        }
+        return;
+      } else {
+        playArea.classList.remove('hidden');
+        endArea.classList.add('hidden');
+      }
+
+      const buzzWrapper = document.getElementById('team-buzzer-wrapper');
+      const buzzBtn = document.getElementById('team-buzzer-btn');
+      const ringAnim = document.getElementById('buzzer-ring-anim');
+      const mainLabel = document.getElementById('buzzer-main-label');
+      const subLabel = document.getElementById('buzzer-sub-label');
+      const statusText = document.getElementById('team-status-text');
+      const optsBox = document.getElementById('team-options-box');
+      const isTeamLocked = roomState.lockedTeams.includes(myRole);
+
+      const canBuzz = roomState.buzzerOpen && !isTeamLocked && roomState.gameStarted && !roomState.timerPaused;
+      buzzBtn.disabled = !canBuzz;
+      ringAnim.classList.toggle('hidden', !canBuzz);
+
+      if (canBuzz) {
+        mainLabel.innerText = 'اضغط!';
+        subLabel.innerText = 'READY';
+      } else {
+        mainLabel.innerText = 'مغلق';
+        subLabel.innerText = 'STANDBY';
+      }
+
+      if (!roomState.gameStarted) {
+        buzzWrapper.classList.remove('hidden');
+        optsBox.classList.add('hidden');
+        const connectedCount = (roomState.team1Connected ? 1 : 0) + (roomState.team2Connected ? 1 : 0);
+        statusText.innerText = connectedCount < 2
+          ? "تم تسجيل فريقك — في انتظار انضمام الفريق المنافس..."
+          : "يلا نبدأ كملنا! في انتظار بدء السؤال الأول...";
+        statusText.className = "text-base sm:text-lg font-black text-emerald-400";
+      } else if (roomState.showTransition) {
+        buzzWrapper.classList.remove('hidden');
+        optsBox.classList.add('hidden');
+        statusText.innerText = "هننتقل للمرحلة الجاية: مرحلة الضعف (×2)";
+        statusText.className = "text-base sm:text-lg font-black text-amber-300";
+      } else if (roomState.showPressureTransition) {
+        buzzWrapper.classList.remove('hidden');
+        optsBox.classList.add('hidden');
+        statusText.innerText = "⚡ استعدوا للفقرة الثالثة: تحت الضغط (10 ثوانٍ للإجابة بعد الجرس!)";
+        statusText.className = "text-base sm:text-lg font-black text-rose-300";
+      } else if (roomState.buzzedTeam === myRole && !roomState.revealed && roomState.currentQ) {
+        statusText.innerText = roomState.friendCallActive
+          ? `📞 الاستعانة بصديق جارية الآن...`
+          : `⚡ اختر الإجابة الآن (${roomState.timer} ثانية):`;
+        statusText.className = "text-base sm:text-lg font-black text-emerald-400";
+        buzzWrapper.classList.add('hidden');
+        optsBox.classList.remove('hidden');
+
+        const lfBar = document.getElementById('team-lifelines-bar');
+        const myLf = (myRole === 'team1') ? roomState.team1Lifelines : roomState.team2Lifelines;
+        if (lfBar && myLf) {
+          lfBar.classList.remove('hidden');
+          const b50 = document.getElementById('mob-fifty-btn');
+          const bFr = document.getElementById('mob-friend-btn');
+          if (b50) {
+            b50.disabled = !myLf.fifty || roomState.friendCallActive;
+            b50.classList.toggle('opacity-35', !myLf.fifty);
+            b50.classList.toggle('line-through', !myLf.fifty);
+          }
+          if (bFr) {
+            bFr.disabled = !myLf.friend || roomState.friendCallActive;
+            bFr.classList.toggle('opacity-35', !myLf.friend);
+            bFr.classList.toggle('line-through', !myLf.friend);
+          }
+        }
+
+        const optsKey = `${roomState.qIndex}|${roomState.isTieBreaker}|${roomState.wrongOptions.join(',')}|${roomState.eliminatedOptions.join(',')}`;
+        if (optsKey !== lastMobileOptsKey) {
+          lastMobileOptsKey = optsKey;
+          const letters = ['A', 'B', 'C', 'D'];
+          optsBox.innerHTML = roomState.currentQ.opts.map((opt, i) => {
+            const isWrong = roomState.wrongOptions.includes(i);
+            const isElim = roomState.eliminatedOptions.includes(i);
+            const disabled = isWrong || isElim;
+            const btnCls = isElim
+              ? 'bg-slate-950/40 border border-slate-800 text-slate-600 line-through opacity-35'
+              : (isWrong ? 'bg-rose-950/60 border-rose-800 text-rose-400 line-through opacity-50' : 'opt-royal-btn text-white');
+            return `<button onclick="submitAnswer(${i})" ${disabled ? 'disabled' : ''} class="en-font w-full p-4 rounded-2xl ${btnCls} text-left font-bold text-sm sm:text-base cursor-pointer flex items-center gap-3">
+              <span class="w-8 h-8 shrink-0 rounded-xl bg-slate-950 border border-amber-400/55 gold-shimmer-text font-black flex items-center justify-center">${letters[i]}</span>
+              <span>${opt}</span>
+            </button>`;
+          }).join('');
+        }
+      } else {
+        const lfBar = document.getElementById('team-lifelines-bar');
+        if (lfBar) lfBar.classList.add('hidden');
+        buzzWrapper.classList.remove('hidden');
+        optsBox.classList.add('hidden');
+        if (isTeamLocked && !roomState.revealed) {
+          statusText.innerText = "انتهت فرصتك في هذا السؤال — الفرصة للفريق المنافس";
+          statusText.className = "text-base sm:text-lg font-black text-rose-400";
+        } else if (roomState.buzzerOpen) {
+          statusText.innerText = roomState.lockedTeams.length > 0
+            ? "فرصتك الذهبية! اضغط الجرس للإجابة"
+            : "الجرس متاح — اضغط للإجابة";
+          statusText.className = "text-base sm:text-lg font-black text-amber-300";
+        } else if (roomState.buzzedTeam) {
+          const otherName = roomState.buzzedTeam === 'team1' ? roomState.team1Name : roomState.team2Name;
+          statusText.innerText = `يجيب الآن: ${otherName}`;
+          statusText.className = "text-base sm:text-lg font-black text-rose-400";
+        } else {
+          statusText.innerText = "في انتظار السؤال التالي...";
+          statusText.className = "text-base font-bold text-slate-300";
+        }
+      }
+    }
+  }
+
+  function toggleQrModal(show) {
+    const m = document.getElementById('qr-modal');
+    m.classList.toggle('hidden', !show);
+    m.classList.toggle('flex', show);
+  }
+
+  function fireCelebrationConfetti() {
+    if (typeof confetti === 'function') {
+      confetti({ particleCount: 110, spread: 85, origin: { y: 0.6 }, colors: ['#fde047', '#f59e0b', '#38bdf8', '#f43f5e'] });
+    }
+  }
+
+  function endMatch() {
+    clearInterval(timerInterval);
+    clearInterval(friendInterval);
+    clearSavedMatch();
+    roomState.matchEnded = true;
+    roomState.buzzerOpen = false;
+    roomState.showTransition = false;
+    roomState.showPressureTransition = false;
+    roomState.timerPaused = false;
+
+    setArenaState('finale');
+
+    const modal = document.getElementById('winner-modal');
+    modal.classList.remove('hidden');
+    modal.classList.add('flex');
+    const title = document.getElementById('winner-title');
+
+    const tbBtn = document.getElementById('tie-breaker-btn');
+    if (roomState.team1Score > roomState.team2Score) {
+      roomState.winnerTeam = 'team1';
+      title.innerText = `الفائز: ${roomState.team1Name}`;
+      if (tbBtn) tbBtn.classList.add('hidden');
+    } else if (roomState.team2Score > roomState.team1Score) {
+      roomState.winnerTeam = 'team2';
+      title.innerText = `الفائز: ${roomState.team2Name}`;
+      if (tbBtn) tbBtn.classList.add('hidden');
+    } else {
+      roomState.winnerTeam = 'tie';
+      title.innerText = 'تعادل مستحق بين الفريقين';
+      if (tbBtn) tbBtn.classList.remove('hidden');
+    }
+
+    const summaryText = `${roomState.team1Name}: ${roomState.team1Score} نقطة  |  ${roomState.team2Name}: ${roomState.team2Score} نقطة`;
+    document.getElementById('final-scores-summary').innerText = summaryText;
+    document.getElementById('final-stats-summary').innerText = `الإجابات الصحيحة: ${roomState.team1Name} (${roomState.team1Correct}) • ${roomState.team2Name} (${roomState.team2Correct})`;
+    document.getElementById('goodbye-final-scores').innerText = summaryText;
+
+    playTone('win');
+    fireCelebrationConfetti();
+    broadcastState();
+  }
+
+  function switchToNewTeams() {
+    ['team1', 'team2'].forEach(t => {
+      if (teamConns[t] && teamConns[t].open) {
+        try {
+          teamConns[t].send({ type: 'SESSION_REPLACED' });
+          teamConns[t].close();
+        } catch (e) {}
+      }
+      teamConns[t] = null;
+    });
+
+    document.getElementById('winner-modal').classList.add('hidden');
+    document.getElementById('winner-modal').classList.remove('flex');
+    document.getElementById('explanation-box').classList.add('hidden');
+    const paraModal = document.getElementById('paragraph-intro-modal');
+    if (paraModal) {
+      paraModal.classList.add('hidden');
+      paraModal.classList.remove('flex');
+    }
+
+    document.getElementById('team1-name-input').value = 'الفريق الأول';
+    document.getElementById('team2-name-input').value = 'الفريق الثاني';
+
+    roomState = createFreshState();
+    setArenaState('neutral');
+
+    if (isLocalMode) {
+      startLocalStudioMode();
+    } else {
+      initHostPeerServer();
+    }
+  }
+
+  function closeCompetition() {
+    clearInterval(timerInterval);
+    roomState.sessionClosed = true;
+    setArenaState('finale');
+    broadcastState();
+
+    document.getElementById('winner-modal').classList.add('hidden');
+    document.getElementById('winner-modal').classList.remove('flex');
+    document.getElementById('host-game-screen').classList.add('hidden');
+    document.getElementById('host-waiting-screen').classList.add('hidden');
+
+    const bye = document.getElementById('goodbye-screen');
+    bye.classList.remove('hidden');
+    bye.classList.add('flex');
+    playTone('win');
+    fireCelebrationConfetti();
+  }
+
+  function returnToLobby() {
+    clearInterval(timerInterval);
+    if (peer) { try { peer.destroy(); } catch (e) {} }
+    myRole = '';
+    isLocalMode = false;
+    roomState = createFreshState();
+
+    ['goodbye-screen', 'winner-modal', 'host-game-screen', 'host-waiting-screen', 'team-screen', 'stage-transition-modal'].forEach(id => {
+      const el = document.getElementById(id);
+      if (el) {
+        el.classList.add('hidden');
+        el.classList.remove('flex');
+      }
+    });
+    const btn = document.getElementById('create-host-btn');
+    if (btn) {
+      btn.disabled = false;
+      btn.innerHTML = '<svg class="w-7 h-7" fill="url(#gold3d)" viewBox="0 0 24 24"><path d="M21 3H3c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h5v2h8v-2h5c1.1 0 1.99-.9 1.99-2L23 5c0-1.1-.9-2-2-2zm0 14H3V5h18v12z"/></svg><span class="gold-shimmer-text">Host (موبايلات + QR)</span>';
+    }
+    document.getElementById('lobby-screen').classList.remove('hidden');
+    setArenaState('neutral');
+  }
+
+  // اختصارات لوحة المفاتيح للمقدم
+  window.addEventListener('keydown', (e) => {
+    if (myRole !== 'host' || !roomState.gameStarted || roomState.matchEnded) return;
+    if (e.target && (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA')) return;
+
+    const key = e.key.toLowerCase();
+    if ((e.ctrlKey || e.metaKey) && key === 'z') {
+      e.preventDefault();
+      undoLastAction();
+      return;
+    }
+    if (key === '1') {
+      e.preventDefault();
+      manualBuzz('team1');
+    } else if (key === '2') {
+      e.preventDefault();
+      manualBuzz('team2');
+    } else if (e.code === 'Space') {
+      e.preventDefault();
+      toggleTimerPause();
+    } else if (key === 'b') {
+      e.preventDefault();
+      unlockBuzzers();
+    } else if (key === 'v') {
+      e.preventDefault();
+      revealAnswer();
+    } else if (key === 'm') {
+      e.preventDefault();
+      toggleMute();
+    } else if (key === 'g') {
+      e.preventDefault();
+      toggleQuestionJumpModal(true);
+    } else if (key === 'f') {
+      e.preventDefault();
+      toggleFullscreen();
+    } else if (e.key === 'ArrowLeft') {
+      e.preventDefault();
+      nextQuestion();
+    } else if (e.key === 'ArrowRight') {
+      e.preventDefault();
+      prevQuestion();
+    }
+  });
+
+  // استعادة إعداد كتم الصوت بأمان
+  try {
+    if (localStorage.getItem('abakera_muted') === '1') {
+      isMuted = true;
+      const btn = document.getElementById('mute-btn');
+      if (btn) btn.innerText = 'الصوت: مكتوم';
+    }
+  } catch (e) {}
+
+  const urlParams = new URLSearchParams(window.location.search);
+  const isMobileTeamClient = Boolean(urlParams.get('room'));
+  if (isMobileTeamClient) {
+    roomId = urlParams.get('room');
+    document.getElementById('host-role-card').classList.add('hidden');
+    document.getElementById('team-role-card').classList.remove('hidden');
+    prewarmMobileConnection(roomId);
+  } else {
+    checkSavedMatchUI();
+  }
+
+  // ================= خلفية الـ DNA ثلاثية الأبعاد والحلقات المدارية الدائمة =================
+  let targetCamX = 0;
+  let targetCamZ = 12.5;
+  let dnaSpeed = 0.008;
+  let ringMat1 = null;
+  let matStrandB = null;
+
+  function setArenaState(state) {
+    if (!ringMat1 || !matStrandB) return;
+    if (state === 'team1') {
+      targetCamX = 1.8;
+      targetCamZ = 11;
+      ringMat1.color.setHex(0xf43f5e);
+      matStrandB.color.setHex(0xf43f5e);
+      dnaSpeed = 0.024;
+    } else if (state === 'team2') {
+      targetCamX = -1.8;
+      targetCamZ = 11;
+      ringMat1.color.setHex(0x3b82f6);
+      matStrandB.color.setHex(0x3b82f6);
+      dnaSpeed = 0.024;
+    } else if (state === 'correct') {
+      targetCamX = 0;
+      targetCamZ = 11.4;
+      ringMat1.color.setHex(0x10b981);
+      matStrandB.color.setHex(0x10b981);
+      dnaSpeed = 0.018;
+    } else if (state === 'wrong') {
+      targetCamX = 0;
+      targetCamZ = 13.2;
+      ringMat1.color.setHex(0xef4444);
+      matStrandB.color.setHex(0xef4444);
+      dnaSpeed = 0.004;
+    } else if (state === 'finale') {
+      targetCamX = 0;
+      targetCamZ = 10.5;
+      ringMat1.color.setHex(0xfde047);
+      matStrandB.color.setHex(0x38bdf8);
+      dnaSpeed = 0.022;
+    } else {
+      targetCamX = 0;
+      targetCamZ = 12.5;
+      ringMat1.color.setHex(0xfde047);
+      matStrandB.color.setHex(0x38bdf8);
+      dnaSpeed = 0.008;
+    }
+  }
+
+  window.addEventListener('load', () => {
+    // إلغاء خلفية الـ 3D على موبايلات المتسابقين لضمان أقصى سرعة استجابة للجرس
+    if (typeof THREE === 'undefined' || isMobileTeamClient) return;
+    try {
+      const scene = new THREE.Scene();
+      scene.background = new THREE.Color(0x02050e);
+      scene.fog = new THREE.FogExp2(0x02050e, 0.028);
+      const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000);
+      const isMobileView = window.innerWidth < 768;
+      const renderer = new THREE.WebGLRenderer({ antialias: !isMobileView, alpha: false, powerPreference: 'high-performance' });
+      renderer.setClearColor(0x02050e, 1);
+      renderer.setSize(window.innerWidth, window.innerHeight);
+      renderer.setPixelRatio(Math.min(window.devicePixelRatio, isMobileView ? 1 : 1.5));
+      document.getElementById('canvas-container').appendChild(renderer.domElement);
+
+      const ambientLight = new THREE.AmbientLight(0xffffff, 0.8);
+      scene.add(ambientLight);
+      const pointLight1 = new THREE.PointLight(0xfde047, 3.2, 45);
+      pointLight1.position.set(6, 6, 8);
+      scene.add(pointLight1);
+      const pointLight2 = new THREE.PointLight(0x38bdf8, 2.5, 45);
+      pointLight2.position.set(-6, -4, 8);
+      scene.add(pointLight2);
+
+      const gridHelper = new THREE.GridHelper(48, 48, 0xf59e0b, 0x0f172a);
+      gridHelper.position.y = -5.2;
+      gridHelper.material.transparent = true;
+      gridHelper.material.opacity = 0.28;
+      scene.add(gridHelper);
+
+      const dnaGroup = new THREE.Group();
+      const sphereGeo = new THREE.SphereGeometry(0.22, isMobileView ? 10 : 14, isMobileView ? 10 : 14);
+      const matStrandA = new THREE.MeshStandardMaterial({ color: 0xfde047, roughness: 0.15, metalness: 0.85, emissive: 0xd97706, emissiveIntensity: 0.45 });
+      matStrandB = new THREE.MeshStandardMaterial({ color: 0x38bdf8, roughness: 0.15, metalness: 0.75, emissive: 0x0284c7, emissiveIntensity: 0.4 });
+      const rungMat = new THREE.MeshBasicMaterial({ color: 0xfef08a, transparent: true, opacity: 0.45 });
+
+      for (let i = -16; i <= 16; i++) {
+        const y = i * 0.45;
+        const angle = i * 0.4;
+        const r = 2.8;
+
+        const s1 = new THREE.Mesh(sphereGeo, matStrandA);
+        s1.position.set(Math.cos(angle) * r, y, Math.sin(angle) * r);
+        const s2 = new THREE.Mesh(sphereGeo, matStrandB);
+        s2.position.set(Math.cos(angle + Math.PI) * r, y, Math.sin(angle + Math.PI) * r);
+
+        const rungGeo = new THREE.CylinderGeometry(0.038, 0.038, r * 2, 8);
+        const rung = new THREE.Mesh(rungGeo, rungMat);
+        rung.position.set(0, y, 0);
+        rung.rotation.z = Math.PI / 2;
+        rung.rotation.y = -angle;
+
+        dnaGroup.add(s1, s2, rung);
+      }
+      dnaGroup.position.set(0, 0, -4);
+      dnaGroup.rotation.z = Math.PI / 9;
+      scene.add(dnaGroup);
+
+      const ringGeo1 = new THREE.TorusGeometry(6.8, 0.045, 16, 120);
+      ringMat1 = new THREE.MeshBasicMaterial({ color: 0xfde047, transparent: true, opacity: 0.45 });
+      const ring1 = new THREE.Mesh(ringGeo1, ringMat1);
+      ring1.rotation.x = Math.PI / 2.3;
+
+      const ringGeo2 = new THREE.TorusGeometry(8.2, 0.035, 16, 120);
+      const ringMat2 = new THREE.MeshBasicMaterial({ color: 0x38bdf8, transparent: true, opacity: 0.32 });
+      const ring2 = new THREE.Mesh(ringGeo2, ringMat2);
+      ring2.rotation.y = Math.PI / 3;
+
+      scene.add(ring1, ring2);
+
+      const particlesGeo = new THREE.BufferGeometry();
+      const particleCount = isMobileView ? 60 : 110;
+      const posArray = new Float32Array(particleCount * 3);
+      for (let i = 0; i < particleCount * 3; i++) {
+        posArray[i] = (Math.random() - 0.5) * 32;
+      }
+      particlesGeo.setAttribute('position', new THREE.BufferAttribute(posArray, 3));
+      const particlesMat = new THREE.PointsMaterial({ size: 0.09, color: 0xfde047, transparent: true, opacity: 0.6 });
+      const particlesMesh = new THREE.Points(particlesGeo, particlesMat);
+      scene.add(particlesMesh);
+
+      camera.position.set(0, 0.5, 12.5);
+
+      function animate3D() {
+        requestAnimationFrame(animate3D);
+        if (document.hidden) return;
+
+        camera.position.x += (targetCamX - camera.position.x) * 0.05;
+        camera.position.z += (targetCamZ - camera.position.z) * 0.05;
+        camera.lookAt(0, 0, 0);
+
+        dnaGroup.rotation.y += dnaSpeed;
+        ring1.rotation.z += 0.004;
+        ring2.rotation.x -= 0.003;
+        ring2.rotation.y += 0.002;
+
+        gridHelper.position.z = (gridHelper.position.z + 0.018) % 1;
+        particlesMesh.rotation.y += 0.0008;
+
+        renderer.render(scene, camera);
+      }
+      animate3D();
+
+      window.addEventListener('resize', () => {
+        camera.aspect = window.innerWidth / window.innerHeight;
+        camera.updateProjectionMatrix();
+        renderer.setSize(window.innerWidth, window.innerHeight);
+      });
+    } catch (e) {}
+  });
+</script>
+</body>
+</html>
